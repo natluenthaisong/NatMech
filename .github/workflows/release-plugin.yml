@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   CSPROJ: AnoMech/AnoMech.csproj
