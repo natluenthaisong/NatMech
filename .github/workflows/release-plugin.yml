@@ -24,7 +24,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   CSPROJ: AnoMech/AnoMech.csproj
   INTERNAL_NAME: NatMech
-  RELEASE_DIR: AnoMech/bin/x64/Release/NatMech
+  RELEASE_DIR: AnoMech/bin/Release/NatMech
 
 jobs:
   release:
