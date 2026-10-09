@@ -38,6 +38,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     [
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion),
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.SupportDpsAccretion),
+        new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers),
     ];
 
     private UmadP3BlackHoleState state = null!;
