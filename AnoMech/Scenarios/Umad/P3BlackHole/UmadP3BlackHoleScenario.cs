@@ -70,6 +70,15 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         LastState = state;
         if (selectedAi is { } idx && idx < AiStrats.Count)
             ((IScenarioAi<UmadP3BlackHoleState>)AiStrats[idx]).Run(state, world);
+        if (settingsWindow.Overrides.Automarkers)
+        {
+            var order = selectedAi is { } markerAi && markerAi >= 0 && markerAi < AiStrats.Count
+                ? ((UmadP3BlackHoleAi)AiStrats[markerAi]).Order
+                : UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion;
+            var ai = new AiManager(world);
+            ai.Automarker(9f, () => UmadP3BlackHoleMarkers.Assign(state.Roles.List, order));
+            ai.Automarker(138.3f, () => []);
+        }
         
         PrimodialCrustsToResolve = 0;
 

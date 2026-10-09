@@ -33,6 +33,25 @@ public sealed class SimWorld : ISimObject, IDisposable
 
     // Convenience reference — SimParty.Empty until CreateParty is called.
     public SimParty Party { get; private set; } = SimParty.Empty;
+    private readonly Dictionary<PartyRole, Sign> partyMarkers = new();
+    public IReadOnlyDictionary<PartyRole, Sign> PartyMarkers => partyMarkers;
+
+    public void SetPartyMarkers(IEnumerable<KeyValuePair<PartyRole, Sign>> assignments)
+    {
+        var valid = assignments.Take(8)
+            .Where(m => Enum.IsDefined(m.Key) && Enum.IsDefined(m.Value))
+            .ToArray();
+        partyMarkers.Clear();
+        Natives.Markings.ClearAll();
+        var signs = new HashSet<Sign>();
+        foreach (var (role, sign) in valid)
+        {
+            if (partyMarkers.ContainsKey(role) || !signs.Add(sign)) continue;
+            partyMarkers.Add(role, sign);
+            if (Party.Get(role) is { } member && member.IsAlive())
+                Natives.Markings.Set(sign, member.GameObjectId);
+        }
+    }
     public IEnumerable<ISimObject> Children => children;
     // Root container — Game owns its lifetime; no parent reaps it.
     public bool IsActive => true;
@@ -221,6 +240,7 @@ public sealed class SimWorld : ISimObject, IDisposable
         Natives.EnmityHud.Clear();
         Natives.PartyHud.Clear();
         Natives.Markings.ClearAll();
+        partyMarkers.Clear();
         Natives.Waymarks.ClearAll();
         Obstacles.Clear();
         ScenarioOrigin = default;

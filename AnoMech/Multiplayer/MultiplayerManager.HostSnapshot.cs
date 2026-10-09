@@ -222,7 +222,8 @@ public sealed partial class MultiplayerManager
                 eo.LastDirectorState, eo.DirectorModSeq, eoConfig?.HideAtState ?? (ushort)0));
         }
 
-        return relay!.SendAsync(new WorldSnapshotMessage(enemies, tethers, eventObjects));
+        var markers = world.PartyMarkers.Select(m => new PartyMarkerState(m.Key, m.Value)).ToList();
+        return relay!.SendAsync(new WorldSnapshotMessage(enemies, tethers, eventObjects, markers));
     }
 
     private static void WarnOverVfxCap(string who, int dropped, string what)

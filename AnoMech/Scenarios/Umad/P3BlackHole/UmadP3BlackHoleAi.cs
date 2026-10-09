@@ -12,6 +12,7 @@ namespace AnoMech.Scenarios.Umad.P3BlackHole;
 public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder) : IScenarioAi<UmadP3BlackHoleState>
 {
     public enum TetherOrder { DpsSupportAccretion, SupportDpsAccretion, DpsSupportAccretionDoubleTethers }
+    public TetherOrder Order => tetherOrder;
 
     public string Name => tetherOrder switch
     {

@@ -81,6 +81,9 @@ public sealed partial class MultiplayerManager
         // peerEnemies still tracked them.
         if (!PeerInRun) return;
         var world = Plugin.GameInstance.World;
+        if (snap.PartyMarkers is { } markers)
+            world.SetPartyMarkers(markers.Take(8).Where(m => m != null)
+                .Select(m => new KeyValuePair<PartyRole, Sign>(m.Role, m.Sign)));
 
         var seenEnemyIds = new HashSet<int>();
         foreach (var e in NetGuard.Cap(snap.Enemies, NetGuard.MaxEnemiesPerSnapshot))

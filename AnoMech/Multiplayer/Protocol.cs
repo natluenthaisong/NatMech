@@ -204,7 +204,10 @@ public sealed record EventObjectState(
 // Full-state, so a dropped frame costs one tick of staleness, not a wrong reconstruction.
 public sealed record WorldSnapshotMessage(
     List<EnemyState> Enemies, List<TetherState> Tethers,
-    List<EventObjectState> EventObjects) : MpMessage, IHostOnlyMessage;
+    List<EventObjectState> EventObjects,
+    List<PartyMarkerState>? PartyMarkers = null) : MpMessage, IHostOnlyMessage;
+
+public sealed record PartyMarkerState(PartyRole Role, AnoMech.Core.Native.Interfaces.Sign Sign);
 
 // Paced independently of WorldSnapshotMessage (see RelayClient's priority queue): role
 // positions are small and urgent, enemy data can be large.

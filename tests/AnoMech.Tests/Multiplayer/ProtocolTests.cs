@@ -9,6 +9,25 @@ namespace AnoMech.Tests;
 
 public class ProtocolTests
 {
+    [Test]
+    public void PartyMarkersRoundTripInHostSnapshot()
+    {
+        var id = RelayWire.PeerId(RelayWire.NewSecret());
+        var message = new WorldSnapshotMessage([], [], [],
+            [new PartyMarkerState(AnoMech.Core.Game.Party.PartyRole.CasterDps,
+                AnoMech.Core.Native.Interfaces.Sign.Bind3)]);
+        var received = (WorldSnapshotMessage)Receive(JsonSerializer.SerializeToUtf8Bytes<MpMessage>(message), true, id);
+        Assert.That(received.PartyMarkers, Is.EqualTo(message.PartyMarkers));
+    }
+
+    [Test]
+    public void OldWorldSnapshotWithoutPartyMarkersStillDeserializes()
+    {
+        var id = RelayWire.PeerId(RelayWire.NewSecret());
+        var received = (WorldSnapshotMessage)Receive(Bytes("{\"t\":\"snapshot\",\"Enemies\":[],\"Tethers\":[],\"EventObjects\":[]}"), true, id);
+        Assert.That(received.PartyMarkers, Is.Null);
+    }
+
     // The peer types a relay passes from peers to the host; the rest are the host's alone.
     private static readonly string[] PeerTypes = ["hello", "claim", "release", "pose", "pong", "startCheckResponse", "startAbort", "sessionEnded",
         "resetRequest", "leaveRequest", "peerAppliedEnemyStatus", "peerAppliedRoleStatus"];

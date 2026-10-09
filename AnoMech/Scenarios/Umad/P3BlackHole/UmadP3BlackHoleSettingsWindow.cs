@@ -119,9 +119,18 @@ public sealed class UmadP3BlackHoleSettingsWindow
     // Drawn from DrawMultiplayerSettings so it stays editable while Multiplayer is open.
     public void DrawThunderIIIPlan()
     {
-        ImGui.Separator();
         // Only the host's plan is read.
         var mpGuest = Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false };
+        var automarkers = Overrides.Automarkers;
+        if (mpGuest)
+            ImGui.TextDisabled("Black Hole automarkers: host setting");
+        else if (ImGui.Checkbox("Black Hole automarkers", ref automarkers))
+            Overrides.Automarkers = automarkers;
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(mpGuest
+                ? "The host controls automarkers for everyone."
+                : "First line: Attack 1-3. Second line: Bind 1-3. Third line: Ignore 1-2. Accretion is last; DPS/support priority follows the strategy. Applies next run.");
+        ImGui.Separator();
         ImGui.TextUnformatted("Thunder III plan (planning tank bots will follow):");
         ImGui.BeginDisabled(mpGuest);
         DrawThunderIIIRow("##thunder1", "Set 1 (~42.6s):", Overrides.ThunderSet1, Overrides.ThunderSet2, v => Overrides.ThunderSet1 = v);

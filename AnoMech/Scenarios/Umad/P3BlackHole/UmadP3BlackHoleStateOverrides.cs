@@ -31,6 +31,7 @@ public static class ThunderIIIPlanning
 
 public sealed class UmadP3BlackHoleStateOverrides
 {
+    public bool Automarkers { get; set; } = true;
     // --- Fight-wide: one roll the whole sim shares -------------------------------------
     // null = random. Only SlapAttacks[0] has (debug-only) UI; the rest are pinned by tests.
     public uint?[] SlapAttacks { get; } = new uint?[3];               // ActionId.SlapHappy_Left / .SlapHappy_Right

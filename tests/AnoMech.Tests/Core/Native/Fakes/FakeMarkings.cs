@@ -5,7 +5,8 @@ namespace AnoMech.Tests;
 
 internal sealed class FakeMarkings : IMarkings
 {
-    public void Set(Sign sign, GameObjectId target) { }
-    public void Clear(Sign sign) { }
-    public void ClearAll() { }
+    public Dictionary<Sign, GameObjectId> Marks { get; } = new();
+    public void Set(Sign sign, GameObjectId target) => Marks[sign] = target;
+    public void Clear(Sign sign) => Marks.Remove(sign);
+    public void ClearAll() => Marks.Clear();
 }

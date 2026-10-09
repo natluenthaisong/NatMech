@@ -751,11 +751,30 @@ public unsafe class MainWindow : Window, IDisposable
                 plugin.LeaveInstance();
             if (inSession && ImGui.IsItemHovered())
                 ImGui.SetTooltip("Takes the whole party back to the inn. Everyone stays in the session.");
+            DrawArenaZoomButton();
         }
         else if (!inSession && !RunActive)
         {
             DrawMultiplayerButton(actionSize);
         }
+    }
+
+    private void DrawArenaZoomButton()
+    {
+        if (plugin.ArenaCamera is not { } camera || !plugin.Game.World.Map.IsInInstance ||
+            !AnoMech.Core.Native.Interfaces.Natives.Zone.IsActive) return;
+        ImGui.SameLine();
+        ImGui.BeginDisabled(!camera.IsZoomedOut && !camera.IsAvailable);
+        if (ImGui.Button(camera.IsZoomedOut ? "Reset zoom###arena-zoom" : "Zoom out###arena-zoom"))
+        {
+            if (camera.IsZoomedOut) camera.Reset();
+            else camera.ZoomOut(inArena: true);
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(camera.IsZoomedOut
+                ? "Restore your camera view. Leaving the arena also restores it."
+                : "Zoom out further to see the arena. You can still adjust zoom with the mouse wheel.");
     }
 
     private void DrawSession()
