@@ -1,4 +1,30 @@
 
+# ![NatMech](images/icon.png) NatMech
+
+*A fork of [AnoMech](https://github.com/anomek/AnoMech) by Anomek*
+
+NatMech is AnoMech with extra strats, installed as a separate plugin so it can sit next to the
+original. Open it with `/natmech` (or `/nat`).
+
+Changes from AnoMech:
+- Dancing Mad P3 Black Hole: **D>S>A double tethers** strat (modified DSA: Support 1 solo + DPS 1
+  both tethers in BH1, Support 3 both tethers + DPS 3 solo in BH4).
+
+### Install NatMech
+
+In Dalamud Settings → Experimental → Custom Plugin Repositories, add:
+
+```
+https://raw.githubusercontent.com/natluenthaisong/NatMech/master/repo.json
+```
+
+Save, then install **NatMech** from the plugin installer.
+
+Licensed under AGPL-3.0, like the original; see [LICENSE.md](LICENSE.md). The rest of this README
+is the original AnoMech documentation.
+
+---
+
 # ![AnoMech](images/icon.png) AnoMech
 
 *Another FFXIV mechanics simulator*
@@ -42,7 +68,7 @@ See: https://github.com/anomek/MyDalamudPlugins
         - [\[LPDU\] Buddies](https://raidplan.io/plan/142oXOZpPc_jh3dd)
         - [\[Old\] p3Z Buddy Meow](https://raidplan.io/plan/lZWqxfxvyhF9sp3Z)
         - [\[Old\] zP6 South adjust](https://raidplan.io/plan/rtc1FcuZFMuyBzP6)
-    - P3 Black Hole _old bh (DSA, single tethers, n/s stomps)_
+    - P3 Black Hole _old bh (DSA, single tethers, n/s stomps); modified DSA (double tethers)_
     - P4 Kefka Says _kefkabin_
     - P5 Exaflares _by [Wydox](https://github.com/Wydox)_
     - P5 Celestriad _by [RoarkGit](https://github.com/RoarkGit)_

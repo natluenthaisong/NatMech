@@ -257,7 +257,7 @@ public sealed class Game : IDisposable
 
         // Per-player settings the fight can't produce together. Empty for a peer and for solo,
         // so only a host's own setup is refused here; this is the funnel every entry point
-        // (both windows, /ano start) passes through.
+        // (both windows, /nat start) passes through.
         if (scenario.SettingsConflicts is { Count: > 0 } conflicts)
         {
             foreach (var conflict in conflicts)

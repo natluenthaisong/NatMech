@@ -1,10 +1,10 @@
 {
-    "Author": "Anomek",
-    "Name": "AnoMech",
-    "Punchline": "Another FFXIV mechanics simulator. Go to an inn and start practice.",
-    "Description": "Spawns fake party members and bosses client-side so you can practice raid mechanics without a full party.",
-    "RepoUrl": "https://github.com/anomek/AnoMech",
-    "IconUrl": "https://raw.githubusercontent.com/anomek/AnoMech/master/images/icon.png",
+    "Author": "natluenthaisong (fork of AnoMech by Anomek)",
+    "Name": "NatMech",
+    "Punchline": "AnoMech fork: FFXIV ultimate mechanics simulator. Go to an inn and start practice.",
+    "Description": "A fork of AnoMech by Anomek. Spawns fake party members and bosses client-side so you can practice raid mechanics without a full party. Adds the modified D>S>A (double tethers) strat for Dancing Mad P3 Black Hole.",
+    "RepoUrl": "https://github.com/natluenthaisong/NatMech",
+    "IconUrl": "https://raw.githubusercontent.com/natluenthaisong/NatMech/master/images/icon.png",
     "Tags": [
         "top",
         "umad",

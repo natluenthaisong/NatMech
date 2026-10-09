@@ -10,7 +10,7 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration configuration;
 
-    public ConfigWindow(Plugin plugin) : base("AnoMech Settings###AnoMechConfig")
+    public ConfigWindow(Plugin plugin) : base("NatMech Settings###NatMechConfig")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;

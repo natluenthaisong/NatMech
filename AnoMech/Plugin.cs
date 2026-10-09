@@ -43,14 +43,14 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ICondition Condition { get; private set; } = null!;
     [PluginService] internal static IJobGauges JobGauges { get; private set; } = null!;
 
-    private const string CommandName = "/anomech";
-    private const string CommandAlias = "/ano";
+    private const string CommandName = "/natmech";
+    private const string CommandAlias = "/nat";
     private bool commandsRegistered;
 
     public Configuration Configuration { get; init; }
     internal static Configuration Config { get; private set; } = null!;
 
-    public readonly WindowSystem WindowSystem = new("AnoMech");
+    public readonly WindowSystem WindowSystem = new("NatMech");
     public Game Game { get; }
     public MultiplayerManager Multiplayer { get; } = new();
     internal static MultiplayerManager MultiplayerInstance { get; private set; } = null!;
@@ -113,11 +113,11 @@ public sealed class Plugin : IDalamudPlugin
 
             CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Open AnoMech. Subcommands: config, mp, start, reset, leave"
+                HelpMessage = "Open NatMech. Subcommands: config, mp, start, reset, leave"
             });
             CommandManager.AddHandler(CommandAlias, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Alias for /anomech"
+                HelpMessage = "Alias for /natmech"
             });
             commandsRegistered = true;
 
