@@ -77,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
     private VfxSpawnLog? vfxSpawnLog;
     private OpcodeUpdater? opcodeUpdater;
     internal ArenaCamera? ArenaCamera { get; private set; }
+    internal bool InSimArena => zoneSession?.IsActive == true && Game.World.Map.IsInInstance;
 
     public Plugin()
     {
@@ -267,7 +268,7 @@ public sealed class Plugin : IDalamudPlugin
         // First and on its own: the guard must run when Game.Tick is paused or throwing.
         try { ZoneSession.TickGuard(); }
         catch (Exception e) { Core.DiagnosticLog.Warn($"[Plugin] ZoneSession.TickGuard threw: {e}"); }
-        try { ArenaCamera?.Tick(zoneSession?.IsActive == true && Game.World.Map.IsInInstance); }
+        try { ArenaCamera?.Tick(InSimArena); }
         catch (Exception e) { Core.DiagnosticLog.Warn($"[Plugin] ArenaCamera.Tick threw: {e}"); }
         // Both ticks reach code driven by whatever a relay sent; neither may take the frame
         // pump down.

@@ -115,12 +115,18 @@ public sealed class UmadP3BlackHoleSettingsWindow
     }
 #endif
 
-    // Only matters when a tank slot is bot-driven. Two rows: the sim casts Thunder III twice.
-    // Drawn from DrawMultiplayerSettings so it stays editable while Multiplayer is open.
-    public void DrawThunderIIIPlan()
+    // Drawn from the scenario's DrawMultiplayerSettings so it stays editable while Multiplayer is open.
+    public void DrawMultiplayerSettings()
     {
-        // Only the host's plan is read.
+        // Only the host's settings are read.
         var mpGuest = Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false };
+        DrawAutomarkersToggle(mpGuest);
+        ImGui.Separator();
+        DrawThunderIIIPlan(mpGuest);
+    }
+
+    private void DrawAutomarkersToggle(bool mpGuest)
+    {
         var automarkers = Overrides.Automarkers;
         if (mpGuest)
             ImGui.TextDisabled("Black Hole automarkers: host setting");
@@ -130,7 +136,11 @@ public sealed class UmadP3BlackHoleSettingsWindow
             ImGui.SetTooltip(mpGuest
                 ? "The host controls automarkers for everyone."
                 : "First line: Attack 1-3. Second line: Bind 1-3. Third line: Ignore 1-2. Accretion is last; DPS/support priority follows the strategy. Applies next run.");
-        ImGui.Separator();
+    }
+
+    // Only matters when a tank slot is bot-driven. Two rows: the sim casts Thunder III twice.
+    private void DrawThunderIIIPlan(bool mpGuest)
+    {
         ImGui.TextUnformatted("Thunder III plan (planning tank bots will follow):");
         ImGui.BeginDisabled(mpGuest);
         DrawThunderIIIRow("##thunder1", "Set 1 (~42.6s):", Overrides.ThunderSet1, Overrides.ThunderSet2, v => Overrides.ThunderSet1 = v);
