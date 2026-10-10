@@ -123,4 +123,7 @@ New project `AnoMech.Standalone/` (in `AnoMech.sln`), `net10.0-windows`, `UseWin
 
 ## Status log
 
-- 2026-10-11: plan written; nothing built yet.
+- 2026-10-11: plan written.
+- 2026-10-11: M0 done. `AnoMech.Standalone` (NatMechPractice.exe) builds in the solution with
+  linked fakes and an app-side `DalamudServices` (namespace AnoMech.Tests, no NUnit) in `Host/`;
+  datamining download moved to `build/Datamining.targets`; all tests pass.

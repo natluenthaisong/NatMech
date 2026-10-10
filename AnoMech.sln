@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnoMech.Relay.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnoMech.Tests", "tests\AnoMech.Tests\AnoMech.Tests.csproj", "{3C844A97-EBDA-424F-8B72-AB80A56A4175}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnoMech.Standalone", "AnoMech.Standalone\AnoMech.Standalone.csproj", "{0422EEC6-0773-4485-8D0F-1B17ACB3C717}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -85,6 +87,18 @@ Global
 		{3C844A97-EBDA-424F-8B72-AB80A56A4175}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3C844A97-EBDA-424F-8B72-AB80A56A4175}.Release|x86.ActiveCfg = Release|Any CPU
 		{3C844A97-EBDA-424F-8B72-AB80A56A4175}.Release|x86.Build.0 = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|x64.Build.0 = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Debug|x86.Build.0 = Debug|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|x64.ActiveCfg = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|x64.Build.0 = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|x86.ActiveCfg = Release|Any CPU
+		{0422EEC6-0773-4485-8D0F-1B17ACB3C717}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

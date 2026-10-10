@@ -22,7 +22,7 @@ inn, drives their casts and movement, and renders the real VFX, cast bars, tethe
 - Scenarios run headless against fakes (`ScenarioCatalogTests`: every strat, random seeds, no
   deaths). `IGameData` in tests (`DataminingGameData`) reads real sheets from
   xivapi/ffxiv-datamining CSVs downloaded into `obj/datamining/<commit>/`; bump `DataminingCommit`
-  in `AnoMech.Tests.csproj` for a newer patch, and add a sheet to `DataminingSheet` when `IGameData`
+  in `build/Datamining.targets` (shared with `AnoMech.Standalone`) for a newer patch, and add a sheet to `DataminingSheet` when `IGameData`
   starts reading it.
 - Layout: one test file per concept tested, placed in the directory that mirrors the production
   code it covers (`AnoMech.Relay/Server/` → `tests/AnoMech.Relay.Tests/Server/`). 
