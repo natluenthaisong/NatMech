@@ -27,9 +27,8 @@ internal sealed unsafe class ArenaCamera : IDisposable
     internal bool ZoomOut(bool inArena)
     {
         if (!inArena || !IsAvailable) return false;
-        var camera = (Camera*)cameraAddress();
-        if (camera == null) return false;
         if (IsZoomedOut) return true;
+        var camera = (Camera*)cameraAddress();
         if (saved != null) Reset();
         saved = new SavedCamera((nint)camera, camera->MaxDistance, camera->Distance,
             camera->InterpDistance, camera->ZoomMode);

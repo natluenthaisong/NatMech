@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using AnoMech.Core.Game.Party;
+using AnoMech.Core.Native.Interfaces;
 using AnoMech.Core.SimObjects;
 using AnoMech.Scenarios.Top;
 using AnoMech.Scenarios.Umad.P1TeleTrouncing;
@@ -207,7 +208,7 @@ public sealed record WorldSnapshotMessage(
     List<EventObjectState> EventObjects,
     List<PartyMarkerState>? PartyMarkers = null) : MpMessage, IHostOnlyMessage;
 
-public sealed record PartyMarkerState(PartyRole Role, AnoMech.Core.Native.Interfaces.Sign Sign);
+public sealed record PartyMarkerState(PartyRole Role, Sign Sign);
 
 // Paced independently of WorldSnapshotMessage (see RelayClient's priority queue): role
 // positions are small and urgent, enemy data can be large.

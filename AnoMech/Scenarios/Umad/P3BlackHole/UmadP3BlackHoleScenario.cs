@@ -31,7 +31,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     public void DrawPerPlayerSettings() => settingsWindow.DrawPerPlayer();
     public object SettingsOverrides => settingsWindow.Overrides;
     public IReadOnlyList<string> SettingsConflicts => settingsWindow.Overrides.Validate().Problems;
-    public void DrawMultiplayerSettings() => settingsWindow.DrawThunderIIIPlan();
+    public void DrawMultiplayerSettings() => settingsWindow.DrawMultiplayerSettings();
     private readonly UmadP3BlackHoleSettingsWindow settingsWindow = new();
 
     public IReadOnlyList<IScenarioAi> AiStrats =>
@@ -68,18 +68,13 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         party = worldParam.Party;
         state = new UmadP3BlackHoleState(world, settingsWindow.Overrides);
         LastState = state;
-        if (selectedAi is { } idx && idx < AiStrats.Count)
-            ((IScenarioAi<UmadP3BlackHoleState>)AiStrats[idx]).Run(state, world);
+        var strat = selectedAi is { } idx && idx >= 0 && idx < AiStrats.Count
+            ? (UmadP3BlackHoleAi)AiStrats[idx]
+            : null;
+        strat?.Run(state, world);
         if (settingsWindow.Overrides.Automarkers)
-        {
-            var order = selectedAi is { } markerAi && markerAi >= 0 && markerAi < AiStrats.Count
-                ? ((UmadP3BlackHoleAi)AiStrats[markerAi]).Order
-                : UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion;
-            var ai = new AiManager(world);
-            ai.Automarker(9f, () => UmadP3BlackHoleMarkers.Assign(state.Roles.List, order));
-            ai.Automarker(138.3f, () => []);
-        }
-        
+            ScheduleAutomarkers(strat?.Order ?? UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion);
+
         PrimodialCrustsToResolve = 0;
 
        
@@ -105,6 +100,14 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         Run_PlayerLockons();
         // [64.06s] 03|400040E9|Chaos|00|1|0000|00||7691|9020|44|44|0|10000|||100.00|104.00|0.00|0.00|7fb12caee07dda16
         world.Events.Add(0f, () => CleanseHelper = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.KefkaHelper, NameId: BNpcNameId.Chaos, Level: 1, Targetable: false, EnemyList: EnemyListMode.Never, IsVisible: false, Placement: new Placement(new Vector3(0.000f, 0.000f, 4.000f), 0.000f))));
+    }
+
+    // Solo runs have no strat but still get markers, laid out as D>S>A.
+    private void ScheduleAutomarkers(UmadP3BlackHoleAi.TetherOrder order)
+    {
+        var ai = new AiManager(world);
+        ai.Automarker(9f, () => UmadP3BlackHoleMarkers.Assign(state.Roles.List, order));
+        ai.Automarker(138.3f, () => []);
     }
 
     // Fixed-time replays of the real director's messages with no dependency on this run's

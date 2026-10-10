@@ -761,8 +761,7 @@ public unsafe class MainWindow : Window, IDisposable
 
     private void DrawArenaZoomButton()
     {
-        if (plugin.ArenaCamera is not { } camera || !plugin.Game.World.Map.IsInInstance ||
-            !AnoMech.Core.Native.Interfaces.Natives.Zone.IsActive) return;
+        if (plugin.ArenaCamera is not { } camera || !plugin.InSimArena) return;
         ImGui.SameLine();
         ImGui.BeginDisabled(!camera.IsZoomedOut && !camera.IsAvailable);
         if (ImGui.Button(camera.IsZoomedOut ? "Reset zoom###arena-zoom" : "Zoom out###arena-zoom"))
