@@ -131,3 +131,13 @@ New project `AnoMech.Standalone/` (in `AnoMech.sln`), `net10.0-windows`, `UseWin
   19.5 y wall, chat captured via `Host/CaptureService`). `NatMechPractice.exe --selftest out.log`
   plays a full god-mode run standing still: finishes at ~162 s, logs deaths and tether mistakes,
   exit 0. Run it under `timeout` from bash: a stale build without `--selftest` opens a window.
+- 2026-10-11: M2-M5 done. `UI/MainForm` (toolbar: role, strat, seed, Start/R, Pause/Space, god
+  mode, tether guide, speak; 15 ms timer; `UI/Keyboard` polls GetAsyncKeyState so focus doesn't
+  matter), `UI/ArenaView` (arena, waymarks, enemies minus invisible helpers, tethers, party),
+  `UI/Coach` (callouts + mistakes on the fight clock, AoE impact flashes from AoeQuery.Evaluated and
+  cast telegraphs, both by sampling AoeQuery.SignedDistance; tether guide), `UI/SidePanel` (clock,
+  casts, statuses, callouts, chat log, paused/dead/cleared banner).
+  Checks: `--snapshot out.png <seconds> [seed]` renders the window offscreen (verified 23.5 s slap
+  flashes, 48 s Damning Edict telegraph, 33.5 s double tethers, 64.5 s wave 2); `--selftest` now
+  also walks east 1 s (moves 6.00 y); the real window launches, responds and closes cleanly.
+  Not yet seen by a person: keyboard feel, speech, pause button text, layout at other sizes.
