@@ -274,12 +274,6 @@ internal sealed unsafe class BattleCharaProxy : IBattleCharaProxy
         return scheduler == null ? 0 : scheduler->LoadTimelineResources();
     }
 
-    public void SetAnimationState(int arg2, int arg3)
-    {
-        var obj = Ptr;
-        if (obj != null) TimelineContainerPointers.SetAnimationState(&obj->Timeline, arg2, arg3);
-    }
-
 
     // ── Casting ──────────────────────────────────────────────────────────────
 
@@ -467,21 +461,11 @@ internal sealed unsafe class BattleCharaProxy : IBattleCharaProxy
         return vfx == null ? null : new ActorVfxProxy(vfx);
     }
 
-    // Through the native setter: it allocates and releases the VFX at Tether+0x08, and a bare
-    // struct write leaves that VFX dangling, so the line keeps drawing.
-    public void SetTether(byte slot, ushort tetherId, GameObjectId target, byte progress)
-    {
-        var obj = Ptr;
-        if (obj != null) VfxContainerPointers.SetTether(&obj->Vfx, slot, tetherId, (ulong)target, progress);
-    }
-
     public ushort GetTetherId(byte slot)
     {
         var obj = Ptr;
         return obj == null ? (ushort)0 : obj->Vfx.Tethers[slot].Id;
     }
-
-    public void ClearTether(byte slot) => SetTether(slot, 0, default, 0);
 
     public void ShowFlyText(uint amount, string label, uint damageTypeIcon = 0)
     {
@@ -491,9 +475,6 @@ internal sealed unsafe class BattleCharaProxy : IBattleCharaProxy
         Plugin.FlyText.AddFlyText(FlyTextKind.Damage, ((GameObject*)obj)->ObjectIndex, amount, 0,
             new SeString(new TextPayload(label)), new SeString(), DamageColorAbgr, 0, damageTypeIcon);
     }
-
-    public void CarryTo(Vector3 destination, float rotation, bool selfTarget)
-        => ForcedMovement.CarryTo(EntityId, destination, rotation, selfTarget);
 
     public void Despawn()
     {

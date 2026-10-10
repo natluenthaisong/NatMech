@@ -64,7 +64,7 @@ public sealed partial class MultiplayerManager
             }
             if (puppet.PendingNetworkCarry is { } carry)
             {
-                _ = relay!.SendAsync(new CarryMessage(role, carry.Destination.X, carry.Destination.Y, carry.Destination.Z, (int)carry.Mode));
+                _ = relay!.SendAsync(new CarryMessage(role, carry.X, carry.Y, carry.Z));
                 puppet.ClearPendingNetworkCarry();
             }
         }
@@ -88,7 +88,7 @@ public sealed partial class MultiplayerManager
             {
                 netId = nextEnemyNetId++;
                 hostEnemyNetIds[enemy] = netId;
-                DiagnosticLog.Info($"[Multiplayer] Host: broadcasting new enemy NetId {netId} -- BNpcBase {enemy.BNpcBaseId}, pos {enemy.Position}, visible {enemy.SpawnConfig.IsVisible}.");
+                DiagnosticLog.Info($"[Multiplayer] Host: broadcasting new enemy NetId {netId} -- BNpcBase {enemy.BNpcBaseId}, pos {enemy.Position}, visibility {enemy.SpawnConfig.Visibility}.");
             }
             var cfg = enemy.SpawnConfig;
             var modelState = enemy.ModelState;
@@ -116,7 +116,7 @@ public sealed partial class MultiplayerManager
                 && (!hostEnemyLastLoggedAnimationState.TryGetValue(enemy, out var lastStateSeq) || lastStateSeq != enemy.AnimationStateSeq))
             {
                 hostEnemyLastLoggedAnimationState[enemy] = enemy.AnimationStateSeq;
-                DiagnosticLog.Info($"[Multiplayer] Host: enemy NetId {netId} (BNpcBase {enemy.BNpcBaseId}) AnimationState -> ({animState.Arg2},{animState.Arg3}) (seq {enemy.AnimationStateSeq}).");
+                DiagnosticLog.Info($"[Multiplayer] Host: enemy NetId {netId} (BNpcBase {enemy.BNpcBaseId}) AnimationState -> ({animState.Slot},{animState.Value}) (seq {enemy.AnimationStateSeq}).");
             }
             var casting = enemy.Casting;
             // Pairs with the peer's line, so a missing effect narrows to the send or the receive.
@@ -146,10 +146,10 @@ public sealed partial class MultiplayerManager
                 SimAssets.WarnIfUnknownPath(path, "enemy persistent VFX");
             enemies.Add(new EnemyState(
                 netId, enemy.BNpcBaseId, cfg.NameId, cfg.Level, enemy.Targetable, enemy.EnemyListMode,
-                cfg.ModelCharaId, cfg.InitialModeAttributeFlags, cfg.IsVisible, modelState,
+                cfg.ModelCharaId, cfg.InitialModeAttributeFlags, cfg.Visibility, modelState,
                 enemy.ActiveStatuses.Where(s => !SimOnlyStatus.Is(s.StatusId)).Select(s => new EnemyStatusState(s.StatusId, s.Stacks, s.RemainingTime, s.Instance)).ToList(),
                 enemy.AnimationTimelineId, enemy.AnimationTimelineSeq, newLockonVfxIds,
-                enemy.AnimationState?.Arg2, enemy.AnimationState?.Arg3, enemy.AnimationStateSeq,
+                enemy.AnimationState?.Slot, enemy.AnimationState?.Value, enemy.AnimationStateSeq,
                 enemy.Position.X, enemy.Position.Y, enemy.Position.Z, enemy.Rotation,
                 casting.IsCasting, casting.CastSeq, casting.ActionId, casting.Total, casting.OmenDelay, casting.Rotation,
                 casting.TargetLocation?.X, casting.TargetLocation?.Y, casting.TargetLocation?.Z,

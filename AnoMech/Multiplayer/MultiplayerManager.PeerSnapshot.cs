@@ -116,14 +116,15 @@ public sealed partial class MultiplayerManager
                 // A scenario can override the BNpcBase row's model (UCOB P5's Golden Bahamut), so
                 // this has to travel; the allowlist is what stops it naming a foreign one.
                 var config = new EnemySpawnConfig(
-                    e.BNpcBaseId, e.NameId, e.Level, e.Targetable, Enum.IsDefined(e.EnemyList) ? e.EnemyList : EnemyListMode.Never, e.Visible,
+                    e.BNpcBaseId, e.NameId, e.Level, e.Targetable, Enum.IsDefined(e.EnemyList) ? e.EnemyList : EnemyListMode.Never,
+                    Enum.IsDefined(e.Visibility) ? e.Visibility : SpawnVisibility.HiddenUntilShown,
                     placement,
                     ModelCharaId: e.ModelCharaId != 0
                         && SimAssets.Allow(SimAssetKind.ModelChara, e.ModelCharaId, $"enemy NetId {e.NetId} model")
                         ? e.ModelCharaId : 0,
                     e.InitialModeAttributeFlags,
                     NpcSpawnTemplate: template, PacketSpawnEnableDraw: enableDraw);
-                DiagnosticLog.Info($"[Multiplayer] Peer: first snapshot of enemy NetId {e.NetId} -- BNpcBase {e.BNpcBaseId}, pos ({e.X:F2},{e.Y:F2},{e.Z:F2}), rot {e.Rotation:F2}, visible {e.Visible}"
+                DiagnosticLog.Info($"[Multiplayer] Peer: first snapshot of enemy NetId {e.NetId} -- BNpcBase {e.BNpcBaseId}, pos ({e.X:F2},{e.Y:F2},{e.Z:F2}), rot {e.Rotation:F2}, visibility {e.Visibility}"
                     + $", cast {e.CastActionId}/seq {e.CastSeq}, effect {e.EffectActionId}/seq {e.EffectSeq}"
                     + $"{(template != null ? $", template {e.NpcSpawnTemplate}" : "")} -- spawning local doppel.");
                 enemy = world.SpawnEnemy(config);
@@ -222,7 +223,7 @@ public sealed partial class MultiplayerManager
                 DiagnosticLog.Info($"[Multiplayer] Peer: enemy NetId {e.NetId} (BNpcBase {e.BNpcBaseId}) NewLockonVfxIds -> [{string.Join(",", e.NewLockonVfxIds)}].");
                 foreach (var lockonId in NetGuard.Cap(e.NewLockonVfxIds, NetGuard.MaxLockonVfxPerEntity))
                     if (SimAssets.Allow(SimAssetKind.Lockon, lockonId, $"enemy NetId {e.NetId} lockon"))
-                        enemy.AttachLockonVfx(lockonId, persistent: false);
+                        enemy.AttachLockonVfx(lockonId);
             }
             if (e.AnimationStateArg2 is { } arg2 && e.AnimationStateArg3 is { } arg3
                 && (!peerEnemyAnimationState.TryGetValue(e.NetId, out var lastStateSeq) || lastStateSeq != e.AnimationStateSeq))
@@ -230,7 +231,7 @@ public sealed partial class MultiplayerManager
                 peerEnemyAnimationState[e.NetId] = e.AnimationStateSeq;
                 DiagnosticLog.Info($"[Multiplayer] Peer: enemy NetId {e.NetId} (BNpcBase {e.BNpcBaseId}) AnimationState -> ({arg2},{arg3}) (seq {e.AnimationStateSeq}).");
                 if (arg2 is >= 0 and <= NetGuard.MaxAnimationStateArg && arg3 is >= 0 and <= NetGuard.MaxAnimationStateArg)
-                    enemy.SetAnimationState(arg2, arg3);
+                    enemy.SetAnimationState((byte)arg2, (byte)arg3);
             }
         }
         foreach (var staleId in peerEnemies.Keys.Where(id => !seenEnemyIds.Contains(id)).ToList())
@@ -586,7 +587,7 @@ public sealed partial class MultiplayerManager
                 DiagnosticLog.Info($"[Multiplayer] Peer: role {r.Role} NewLockonVfxIds -> [{string.Join(",", r.NewLockonVfxIds)}].");
                 foreach (var lockonId in NetGuard.Cap(r.NewLockonVfxIds, NetGuard.MaxLockonVfxPerEntity))
                     if (SimAssets.Allow(SimAssetKind.Lockon, lockonId, $"role {r.Role} lockon"))
-                        member.AttachLockonVfx(lockonId, persistent: false);
+                        member.AttachLockonVfx(lockonId);
             }
             ApplyNewVfx(member, r.NewVfx, $"role {r.Role}");
             ReconcilePersistentVfx(member, r.PersistentVfx, $"role {r.Role}");
@@ -638,8 +639,7 @@ public sealed partial class MultiplayerManager
     {
         if (!PeerInRun) return;
         if (!NetGuard.TryPosition(msg.X, msg.Y, msg.Z, out var destination)) return;
-        var mode = NetGuard.InRange(msg.Mode, 3) ? (Core.SimObjects.CarryMode)msg.Mode : Core.SimObjects.CarryMode.Native;
-        OwnMember(msg.Role, "Carry")?.CarryTo(destination, mode);
+        OwnMember(msg.Role, "Carry")?.CarryTo(destination);
     }
 
     private void OnPushReceived(PushMessage msg)

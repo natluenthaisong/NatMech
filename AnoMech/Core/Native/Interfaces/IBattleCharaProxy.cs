@@ -36,7 +36,7 @@ public interface IBattleCharaProxy
     void EnableDraw();
     void DisableDraw();
 
-    // DrawObject.IsVisible: false, and the setter a no-op, while there is no DrawObject.
+    // DrawObject.Visibility: SpawnVisibility.HiddenUntilShown, and the setter a no-op, while there is no DrawObject.
     bool HasDrawObject { get; }
     bool IsDrawObjectVisible { get; set; }
 
@@ -64,8 +64,6 @@ public interface IBattleCharaProxy
 
     // 0 when slot 0 has no scheduler timeline.
     ulong LoadBaseTimelineResources();
-
-    void SetAnimationState(int arg2, int arg3);
 
     // ── Casting ──────────────────────────────────────────────────────────────
 
@@ -110,14 +108,9 @@ public interface IBattleCharaProxy
     // Null when the spawn failed.
     IActorVfxProxy? AttachVfx(string path);
 
-    void SetTether(byte slot, ushort tetherId, GameObjectId target, byte progress);
     ushort GetTetherId(byte slot);
-    void ClearTether(byte slot);
 
     void ShowFlyText(uint amount, string label, uint damageTypeIcon = 0);
-
-    // The server's forced carry, which the client animates itself.
-    void CarryTo(Vector3 destination, float rotation, bool selfTarget);
 
     // Frees the slot; the local player's proxy ignores it.
     void Despawn();
