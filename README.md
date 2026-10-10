@@ -31,6 +31,25 @@ https://raw.githubusercontent.com/natluenthaisong/NatMech/master/repo.json
 
 Save, then install **NatMech** from the plugin installer.
 
+### NatMech Practice (prototype): Black Hole without the game
+
+`AnoMech.Standalone` builds `NatMechPractice.exe`, a Windows app that runs the same Black Hole sim
+top-down in 2D, with no FFXIV install or login needed. You steer your dot, the bots play the
+selected strat, and the callouts, tether guide, mistake log and pause all work. Attacks are shaded as
+they're cast and flash where they land.
+
+Build and run it (needs the .NET 10 SDK and Dalamud's libraries, which XIVLauncher keeps in
+`%AppData%\XIVLauncher\addon\Hooks\dev`; set `DALAMUD_HOME` to use another folder):
+
+```
+dotnet run --project AnoMech.Standalone -c Release
+```
+
+Controls: WASD or arrow keys to move, Space to pause, R to restart. The toolbar picks your role,
+strat and seed (blank for random), with toggles for god mode, the tether guide and speech.
+`dotnet publish AnoMech.Standalone -c Release -r win-x64 --self-contained false -o <folder>` makes
+a folder you can copy to another PC that has the .NET 10 Desktop Runtime.
+
 Licensed under AGPL-3.0, like the original; see [LICENSE.md](LICENSE.md). The rest of this README
 is the original AnoMech documentation.
 

@@ -98,7 +98,8 @@ New project `AnoMech.Standalone/` (in `AnoMech.sln`), `net10.0-windows`, `UseWin
 - [ ] **M4 AoE:** resolved AoE flashes and cast telegraphs via `SignedDistance` sampling.
 - [ ] **M5 Coaching:** callouts, tether guide, mistakes, chat log, status HUD, death overlay.
 - [ ] **M6 Ship:** `dotnet publish AnoMech.Standalone -c Release -r win-x64 --self-contained
-  false -o publish/NatMechPractice`; README section; manual run-through.
+  false -o AnoMech.Standalone/bin/publish` (under bin/, so ignored); README section; manual
+  run-through by the user (still open: see status log).
 
 ## Rules and gotchas
 
@@ -141,3 +142,8 @@ New project `AnoMech.Standalone/` (in `AnoMech.sln`), `net10.0-windows`, `UseWin
   flashes, 48 s Damning Edict telegraph, 33.5 s double tethers, 64.5 s wave 2); `--selftest` now
   also walks east 1 s (moves 6.00 y); the real window launches, responds and closes cleanly.
   Not yet seen by a person: keyboard feel, speech, pause button text, layout at other sizes.
+- 2026-10-11: M6 done. Publish works (79 MB; reference .pdb/.xml no longer copied via
+  `AllowedReferenceRelatedFileExtensions`); the published exe passes `--selftest`. README has a
+  "NatMech Practice" section. All 495 + 48 tests pass. Committed locally, not pushed.
+  Next, once the user has played it: fix whatever feels off (keyboard feel, label overlap when the
+  party stacks, speech), then consider sprint, a click-to-face control, and more scenarios.

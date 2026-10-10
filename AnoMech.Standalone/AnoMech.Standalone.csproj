@@ -11,6 +11,8 @@
     <AssemblyName>NatMechPractice</AssemblyName>
     <RootNamespace>AnoMech.Standalone</RootNamespace>
     <IsPackable>false</IsPackable>
+    <!-- Symbols and XML docs next to the referenced libraries would triple the app folder. -->
+    <AllowedReferenceRelatedFileExtensions>.none</AllowedReferenceRelatedFileExtensions>
     <DalamudLibPath Condition="'$(DalamudLibPath)' == ''">$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
     <DalamudLibPath Condition="'$(DALAMUD_HOME)' != ''">$(DALAMUD_HOME)/</DalamudLibPath>
   </PropertyGroup>
