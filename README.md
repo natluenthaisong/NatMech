@@ -8,13 +8,16 @@ original. Open it with `/natmech` (or `/nat`).
 
 Changes from AnoMech:
 - Dancing Mad P3 Black Hole: **D>S>A double tethers** strat (modified DSA: Support 1 solo + DPS 1
-  both tethers in BH1, Support 3 both tethers + DPS 3 solo in BH4).
+  both tethers in BH1, Support 3 both tethers + DPS 3 solo in BH4), selected by default.
 - Dancing Mad P3 Black Hole: optional **tether guide**, an on-screen drawing of the tether(s) the
   selected strat gives you, where to step onto the beam, and where to hold it. Turn it on under
   Scenario settings; it draws solo and for a multiplayer host.
-- Dancing Mad P3 Black Hole: **callouts** worded like cactbot's (Get North tether, Get both
-  tethers, Pass tether), as on-screen text and optionally the Windows voice. The sim never reaches
-  ACT/IINACT, so cactbot itself can't call it.
+- Dancing Mad P3 Black Hole: **callouts** worded like cactbot's: your line number, Slap Happy,
+  Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your
+  tether jobs (Get North tether, Get both tethers, Pass tether). Shown on screen, optionally read
+  aloud with the Windows voice. The sim never reaches ACT/IINACT, so cactbot itself can't call it.
+- Dancing Mad P3 Black Hole: **tether mistakes** are logged at each Nothingness (you weren't holding
+  your tether, or held someone else's), in chat and on screen, and count against a clean run.
 - **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
   Outside multiplayer only.
 
