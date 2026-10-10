@@ -91,6 +91,8 @@ public sealed record RelayOptions
     // and is why this can't default to "trust the header".
     public List<IPNetwork> TrustedProxies { get; set; } = new();
     public string ClientIpHeader { get; set; } = "X-Forwarded-For";
+    public bool ProxyDiagnostics { get; set; }
+    public bool RailwayHttpIngress { get; set; }
 
     public const int MinTokenLength = 16;
 
@@ -99,6 +101,10 @@ public sealed record RelayOptions
     // or rotating IPs, and a generated secret costs nothing to make longer.
     public string? Validate()
     {
+        if (RailwayHttpIngress && AccessToken == null)
+            return "--railway-http-ingress requires ANOMECH_RELAY_TOKEN (or --token). " +
+                   "Use it only with Railway HTTP domains, no TCP proxy, and trusted services in the same environment.";
+
         if (AccessToken is { Length: < MinTokenLength } || AdminToken is { Length: < MinTokenLength })
             return $"--token/--admin-token must be at least {MinTokenLength} characters -- " +
                    "a short shared secret is still guessable over time even with the lockout in place. " +
@@ -108,7 +114,7 @@ public sealed record RelayOptions
         // ever answerable from a header -- and a header is only evidence if the request came
         // from a proxy we were told to trust. Starting without that mapping would mean either
         // believing the header from anyone (spoofable) or rejecting every connection.
-        if ((RequireTls || AccessToken != null || AdminToken != null) && TrustedProxies.Count == 0)
+        if ((RequireTls || AccessToken != null || AdminToken != null) && TrustedProxies.Count == 0 && !RailwayHttpIngress)
             return "A token or --require-tls is set, so TLS is enforced -- which needs --trusted-proxy " +
                    "<cidr> naming the reverse proxy that terminates it (e.g. --trusted-proxy 127.0.0.1/32 " +
                    "for a local Caddy/nginx). Without it, X-Forwarded-Proto could be spoofed by anyone " +

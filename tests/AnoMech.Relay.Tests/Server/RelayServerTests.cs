@@ -74,6 +74,57 @@ public class RelayServerTests
         rebound.Stop();
     }
 
+    [TestCase(true, "http", true, 426)]
+    [TestCase(true, "https", false, 401)]
+    [TestCase(false, "https", true, 426)]
+    public async Task RailwayIngressStillChecksTlsAndTheAccessToken(bool railwayIngress, string protocol, bool validToken, int status)
+    {
+        var token = RelayWire.NewSecret();
+        await using var server = new RelayServer(new RelayOptions
+        {
+            BindAddress = IPAddress.Loopback,
+            Port = 0,
+            RailwayHttpIngress = railwayIngress,
+            AccessToken = token,
+            TrustedProxies = [IPNetwork.Parse("192.0.2.0/24")],
+        }, new QuietLog());
+        server.Start();
+        var request = "GET /host HTTP/1.1\r\nHost: x\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
+                      "Sec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+                      $"X-Forwarded-Proto: {protocol}\r\n" +
+                      (validToken ? $"X-AnoMech-Relay-Token: {token}\r\n" : "") + "\r\n";
+        Assert.That(await RawHttp(server.LocalEndPoint!.Port, request), Does.StartWith($"HTTP/1.1 {status} "));
+        Assert.That(server.GetStats().Sessions, Is.Zero);
+    }
+
+    [TestCase("203.0.113.42", "203.0.113.42")]
+    [TestCase("::ffff:203.0.113.42", "203.0.113.42")]
+    [TestCase("203.0.113.42, 198.51.100.1", "127.0.0.1")]
+    public async Task RailwayIngressUsesTheSingleRealIpHeader(string realIp, string expectedIp)
+    {
+        var token = RelayWire.NewSecret();
+        await using var server = new RelayServer(new RelayOptions
+        {
+            BindAddress = IPAddress.Loopback,
+            Port = 0,
+            RailwayHttpIngress = true,
+            AccessToken = token,
+        }, new QuietLog());
+        server.Start();
+        using var socket = new ClientWebSocket();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        socket.Options.SetRequestHeader("X-AnoMech-Protocol", RelayWire.Version.ToString());
+        socket.Options.SetRequestHeader("X-AnoMech-Peer-Secret", RelayWire.NewSecret());
+        socket.Options.SetRequestHeader("X-AnoMech-Relay-Token", token);
+        socket.Options.SetRequestHeader("X-Forwarded-Proto", "https");
+        socket.Options.SetRequestHeader("X-Real-IP", realIp);
+        socket.Options.SetRequestHeader("X-Forwarded-For", "198.51.100.9");
+        await socket.ConnectAsync(new Uri($"ws://127.0.0.1:{server.LocalEndPoint!.Port}/host"), timeout.Token);
+        await socket.ReceiveAsync(new ArraySegment<byte>(new byte[4096]), timeout.Token);
+        Assert.That(server.GetSessions().Single().Peers.Single().Ip, Is.EqualTo(expectedIp));
+        socket.Abort();
+    }
+
     [Test]
     public void HostControlFramesNameAnOperationAndAnIdentity()
     {

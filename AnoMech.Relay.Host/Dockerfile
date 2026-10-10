@@ -21,6 +21,8 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
 WORKDIR /app
 COPY --from=build --chown=app:app /app/publish .
 
+RUN mkdir -p /app/logs && chown app:app /app/logs
+
 USER app
 EXPOSE 7890
 

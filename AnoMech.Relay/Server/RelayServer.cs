@@ -143,7 +143,10 @@ public sealed class RelayServer : IAsyncDisposable
         log.Info($"[AnoMech.Relay] Listening on {endpoint}. Host a session at /host, join one at /session/<code>.");
         log.Info($"[AnoMech.Relay] Access token: {(options.AccessToken != null ? "required" : "not set -- anyone can connect")}. " +
                  $"Admin endpoint: {(options.AdminToken != null ? "enabled" : "disabled (no --admin-token)")}.");
-        log.Info(options.TrustedProxies.Count == 0
+        log.Info(options.RailwayHttpIngress
+            ? "[AnoMech.Relay] Railway HTTP ingress: trusting X-Real-IP / X-Forwarded-Proto. " +
+              "Do not expose this service with a TCP proxy or share its environment with untrusted services."
+            : options.TrustedProxies.Count == 0
             ? "[AnoMech.Relay] No --trusted-proxy set: client addresses are read from the transport only, and forwarded headers are ignored."
             : $"[AnoMech.Relay] Trusting {options.ClientIpHeader} / X-Forwarded-Proto from: {string.Join(", ", options.TrustedProxies)}.");
         log.Info($"[AnoMech.Relay] Per-connection caps: {options.MaxMessagesPerSecond} msg/s, " +
@@ -279,12 +282,16 @@ public sealed class RelayServer : IAsyncDisposable
 
     // The address every abuse control is keyed on. Behind a reverse proxy the transport
     // address is the proxy's, which would collapse every per-IP cap and lockout into one
-    // shared bucket -- so a forwarded header is consulted, but ONLY when the request actually
-    // came from a configured proxy. The rightmost untrusted entry is the one the trusted hop
+    // shared bucket. Railway mode uses its edge's single X-Real-IP value. Other deployments
+    // consult forwarded headers only from configured proxies. The rightmost untrusted entry is the one the trusted hop
     // observed directly; anything further left was written by the client and is forgeable.
     private IPAddress ResolveClientIp(RelayHttpRequest request)
     {
         var transport = request.RemoteAddress;
+        if (options.RailwayHttpIngress)
+            return IPAddress.TryParse(request.Header("X-Real-IP"), out var realIp)
+                ? NormalizeIp(realIp)
+                : transport;
         if (!IsTrustedProxy(transport)) return transport;
         var header = request.Header(options.ClientIpHeader);
         if (string.IsNullOrEmpty(header)) return transport;
@@ -320,7 +327,7 @@ public sealed class RelayServer : IAsyncDisposable
     // The relay has no TLS of its own -- wss:// is always a reverse proxy terminating TLS in
     // front of us (see README), so X-Forwarded-Proto is the only signal we have for "was the
     // real client connection actually encrypted", and it counts as a signal only when the
-    // request reached us from a proxy we were configured to trust.
+    // request reached us from a configured proxy or isolated Railway HTTP ingress.
     private bool IsRequestEncrypted(RelayHttpRequest request)
     {
         var transport = request.RemoteAddress;
@@ -330,7 +337,7 @@ public sealed class RelayServer : IAsyncDisposable
         // attacker can't produce a loopback transport address, and a proxy (which is itself
         // usually on loopback) always sets the header, so it falls through to the check below.
         if (string.IsNullOrEmpty(forwardedProto) && IPAddress.IsLoopback(transport)) return true;
-        return IsTrustedProxy(transport)
+        return (options.RailwayHttpIngress || IsTrustedProxy(transport))
                && string.Equals(forwardedProto, "https", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -358,6 +365,10 @@ public sealed class RelayServer : IAsyncDisposable
             await RelayHttp.WriteStatusAsync(stream, 400, handshake.Token);
             return;
         }
+
+        if (options.ProxyDiagnostics)
+            log.Info($"[proxy] transport={transport} forwardedProto={request.Header("X-Forwarded-Proto")} " +
+                     $"forwardedFor={request.Header("X-Forwarded-For")} realIp={request.Header("X-Real-IP")}");
 
         Task Respond(int status) => RelayHttp.WriteStatusAsync(stream, status, handshake.Token);
         var path = request.Path;

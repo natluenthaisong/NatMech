@@ -202,6 +202,37 @@ Connects and hangs waiting for input → working.
 
 ## Running it as a public service
 
+### Railway HTTP ingress
+
+For a relay in its own Railway project, `--railway-http-ingress` uses Railway's
+`X-Real-IP` and `X-Forwarded-Proto` headers instead of a proxy address list. It
+requires a Railway deployment environment and an access token of at least 16
+characters. Set `ANOMECH_RELAY_TOKEN` as a sealed service variable in the dashboard.
+The mode keeps the token and TLS checks enabled for multiplayer connections.
+
+This trusts the service's network boundary: expose it only through Railway HTTP
+domains, never a TCP proxy, and keep all other services in the same environment
+trusted. Same-environment services can reach the relay directly and supply headers.
+Railway's environment variables identify the deployment context; they do not
+authenticate an individual incoming connection.
+
+Use one replica, disable Serverless, set `PORT=7890`, and route the domain to port
+7890. The start command is:
+
+```
+dotnet AnoMech.Relay.Host.dll --railway-http-ingress
+```
+
+Railway healthchecks can reach `/info` without TLS headers, so leave `--require-tls`
+unset; setting the access token still enforces TLS on `/host` and `/session/<code>`.
+Verify `/info` reports `requiresToken: true` and a WebSocket upgrade without a
+password is rejected before sharing the domain.
+
+References: [Railway public networking](https://docs.railway.com/networking/public-networking/specs-and-limits)
+and [environment isolation](https://docs.railway.com/networking/private-networking).
+
+### Other reverse proxies
+
 Everything in [Quick local test](#quick-local-test)/[Option A](#option-a--cloud-vps-recommended)
 still applies — these just add the flags worth setting once real strangers (not just
 your own group) can reach the port.
@@ -319,6 +350,10 @@ see [Security notes](#security-notes) for the full reasoning.
 ---
 
 ## Logging
+
+Use `--proxy-diagnostics` temporarily to print the transport address and forwarded
+IP/protocol headers to the console when configuring a reverse proxy. This does not
+log credentials or message bodies. Disable it after verifying proxy trust.
 
 On by default — everything the console prints (session lifecycle, rejections, alerts,
 summaries) also lands in a compressed log directory, plus much finer detail that would

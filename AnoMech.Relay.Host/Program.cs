@@ -34,6 +34,19 @@ internal static class Program
         }
 
         var options = new RelayOptions();
+        options.ProxyDiagnostics = args.Contains("--proxy-diagnostics");
+        if (args.Contains("--railway-http-ingress"))
+        {
+            if (!Guid.TryParse(Environment.GetEnvironmentVariable("RAILWAY_PROJECT_ID"), out _) ||
+                !Guid.TryParse(Environment.GetEnvironmentVariable("RAILWAY_ENVIRONMENT_ID"), out _) ||
+                !Guid.TryParse(Environment.GetEnvironmentVariable("RAILWAY_SERVICE_ID"), out _))
+            {
+                Console.Error.WriteLine("--railway-http-ingress requires a Railway deployment environment.");
+                Environment.ExitCode = 1;
+                return;
+            }
+            options.RailwayHttpIngress = true;
+        }
         if (int.TryParse(GetArg(args, "--port", "-p"), out var port)) options.Port = port;
         var bind = GetArg(args, "--bind") ?? "*";
         if (!TryParseBind(bind, out var bindAddress))
@@ -68,6 +81,7 @@ internal static class Program
         if (options.Validate() is { } invalid)
         {
             Console.Error.WriteLine(invalid);
+            Environment.ExitCode = 1;
             return;
         }
 
