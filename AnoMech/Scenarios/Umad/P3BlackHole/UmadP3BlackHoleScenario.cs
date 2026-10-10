@@ -16,7 +16,6 @@ using AnoMech.Core.Game.Party;
 using AnoMech.Core.Map;
 using AnoMech.Core.SimObjects;
 using AnoMech.Multiplayer;
-using Dalamud.Game.Gui.Toast;
 using static AnoMech.Scenarios.Umad.UmadConstants;
 
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
@@ -36,24 +35,26 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     private readonly UmadP3BlackHoleSettingsWindow settingsWindow = new();
 
     private readonly UmadP3BlackHoleCallouts callouts = new();
+    private readonly CalloutBanner calloutBanner = new();
+    // Tether mistakes this run; the banner shows those past mistakesShown.
+    private readonly List<string> tetherMistakes = new();
+    private int mistakesShown;
+    public IReadOnlyList<string> TetherMistakes => tetherMistakes;
 
     // A guest never runs the strat, so it has no guides; LastState there is a stale solo run's.
     public void DrawOverlay()
     {
         if (LastState is not { } s) return;
         if (Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false }) return;
-        if (Plugin.Config.BlackHoleCallouts && world.Party.Player is { } player
-            && callouts.Next(s.ScenarioObjects, player) is { } call)
-            Announce(call);
+        var speak = Plugin.Config.SpeakBlackHoleCallouts;
+        if (Plugin.Config.BlackHoleCallouts && world.Party.Player is { } player)
+            foreach (var call in callouts.Next(s, world, player, world.Party.PlayerRole))
+                calloutBanner.Show(call.Text, call.Alert, speak);
+        for (; mistakesShown < tetherMistakes.Count; mistakesShown++)
+            calloutBanner.ShowMistake(tetherMistakes[mistakesShown], speak);
+        calloutBanner.Draw();
         if (Plugin.Config.ShowBlackHoleTetherGuide)
             UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
-    }
-
-    private static void Announce(string call)
-    {
-        var speak = Plugin.Config.SpeakBlackHoleCallouts;
-        Plugin.ToastGui.ShowQuest(call, new QuestToastOptions { PlaySound = !speak });
-        if (speak) Plugin.Speech.Say(call);
     }
 
     public IReadOnlyList<IScenarioAi> AiStrats =>
@@ -62,6 +63,9 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.SupportDpsAccretion),
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers),
     ];
+
+    public int DefaultAi => AiStrats.ToList().FindIndex(s =>
+        ((UmadP3BlackHoleAi)s).Order == UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers);
 
     private UmadP3BlackHoleState state = null!;
     private SimWorld world = null!;
@@ -91,12 +95,17 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         state = new UmadP3BlackHoleState(world, settingsWindow.Overrides);
         LastState = state;
         callouts.Reset();
+        calloutBanner.Clear();
+        tetherMistakes.Clear();
+        mistakesShown = 0;
+        nothingnessSet = 0;
+        lastNothingnessAt = float.MinValue;
         var strat = selectedAi is { } idx && idx >= 0 && idx < AiStrats.Count
             ? (UmadP3BlackHoleAi)AiStrats[idx]
             : null;
         strat?.Run(state, world);
         if (settingsWindow.Overrides.Automarkers)
-            ScheduleAutomarkers(strat?.Order ?? UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion);
+            ScheduleAutomarkers(strat?.Order ?? UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers);
 
         PrimodialCrustsToResolve = 0;
 
@@ -125,7 +134,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         world.Events.Add(0f, () => CleanseHelper = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.KefkaHelper, NameId: BNpcNameId.Chaos, Level: 1, Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.InvisibleHelper, Placement: new Placement(new Vector3(0.000f, 0.000f, 4.000f), 0.000f))));
     }
 
-    // Solo runs have no strat but still get markers, laid out as D>S>A.
+    // Solo runs have no strat but still get markers, laid out as the default D>S>A double tethers.
     private void ScheduleAutomarkers(UmadP3BlackHoleAi.TetherOrder order)
     {
         var ai = new AiManager(world);
@@ -555,10 +564,28 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     // without a crust, and didn't kill, spent theirs.
     private void ShootNothingness(SimEnemy? hole, SimCharacter? target)
     {
+        CheckPlayerTether(hole, target);
         if (hole?.Cast(UmadActions.Nothingness, target) is not { } shot) return;
         PrimodialCrustsToResolve += shot.Hits.Count(h => h.Who.HasStatus(StatusId.MeanestExistence)
                                                          && !h.Who.HasStatus(StatusId.PrimordialCrust)
                                                          && !shot.Kills.Contains(h.Who));
+    }
+
+    // Holes firing together are one set, numbered 1-10 as cactbot counts Nothingness.
+    private const float NothingnessSetGap = 0.5f;
+    private int nothingnessSet;
+    private float lastNothingnessAt;
+
+    // Here and not after the shot: a hole's last shot takes its tether down in the same tick.
+    private void CheckPlayerTether(SimEnemy? hole, SimCharacter? holder)
+    {
+        var now = world.Events.Elapsed;
+        if (now - lastNothingnessAt > NothingnessSetGap) nothingnessSet++;
+        lastNothingnessAt = now;
+        if (hole is null || party.Player is not { } player) return;
+        if (UmadP3BlackHoleTetherMistakes.Check(state.ScenarioObjects, hole, holder, player, nothingnessSet) is not { } mistake) return;
+        tetherMistakes.Add(mistake);
+        Plugin.GameInstance.MarkMistake(mistake);
     }
 
     private void Run_Black_Hole_40004166()

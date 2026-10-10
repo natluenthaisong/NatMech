@@ -456,13 +456,7 @@ public sealed class Game : IDisposable
             ShowFirstDeathOverlay(target, cause);
         }
         // Above the godmode return so every swallowed mistake marks.
-        // Prevent Mark stacking by enforcing a cooldown.
-        if (lastMistakeElapsed is not { } last || scenarioElapsed - last > MistakeMarkCooldownSeconds)
-        {
-            lastMistakeElapsed = scenarioElapsed;
-            if (Plugin.Config.EnableMechanicResultMarks)
-                World.Party.Player?.AddVfx(MechanicFailureVfx, persistent: false);
-        }
+        MarkMistakeOnce();
 
         if (GodMode)
         {
@@ -490,10 +484,27 @@ public sealed class Game : IDisposable
         return true;
     }
 
+    // A mechanic the player got wrong without dying, from a scenario's own check. Counts against
+    // a clean run like a death, without the freeze.
+    public void MarkMistake(string reason)
+    {
+        Plugin.ChatGui.PrintError($"[NatMech] Mistake: {reason}");
+        MarkMistakeOnce();
+    }
+
+    // The cooldown keeps one bad moment from stacking marks.
+    private void MarkMistakeOnce()
+    {
+        if (lastMistakeElapsed is { } last && scenarioElapsed - last <= MistakeMarkCooldownSeconds) return;
+        lastMistakeElapsed = scenarioElapsed;
+        if (Plugin.Config.EnableMechanicResultMarks)
+            World.Party.Player?.AddVfx(MechanicFailureVfx, persistent: false);
+    }
+
     private static void PrintDeath(ISimPartyMember target, string cause)
         => Plugin.ChatGui.Print(new XivChatEntry { Type = XivChatType.SystemMessage, Message = $"[AnoMech] {DescribeName(target)} died: {cause}" });
 
-    private static string DescribeName(ISimPartyMember target) => target switch
+    internal static string DescribeName(ISimPartyMember target) => target switch
     {
         SimPlayer => "You",
         SimPartyNpc pm => pm.DisplayName,

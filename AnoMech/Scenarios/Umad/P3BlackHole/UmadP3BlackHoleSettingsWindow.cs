@@ -157,7 +157,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(mpGuest
                 ? "Called from the strat, which only runs solo or on the host."
-                : "Calls your tether jobs from the selected strat, worded like cactbot: Get North tether, Get both tethers, Pass tether. Needs a strat selected.");
+                : "Cactbot-style calls on screen: your line number, Slap Happy, Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your tether jobs from the selected strat (Get North tether, Get both tethers, Pass tether).");
         ImGui.SameLine();
         ImGui.BeginDisabled(!callouts);
         if (ImGui.Checkbox("Speak them", ref speak))

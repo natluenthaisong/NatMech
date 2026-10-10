@@ -54,7 +54,7 @@ public unsafe class MainWindow : Window, IDisposable
     private PartyRole? _roleOverride;
     private bool _soloMode;
 
-    // Index into the selected scenario's AiStrats; reset to the first strat whenever the
+    // Index into the selected scenario's AiStrats; reset to its DefaultAi whenever the
     // selected scenario changes. Passed to RunScenario as selectedAi on a (non-solo) Start.
     // -1 when a grouped scenario's selected region has no strats (Start is then gated off).
     internal int SelectedStrat => _selectedStrat;
@@ -436,7 +436,7 @@ public unsafe class MainWindow : Window, IDisposable
         _selectedScenario = scenario;
         _openZone = scenario.Phase.Zone;
         _soloMode = false;
-        _selectedStrat = 0;
+        _selectedStrat = scenario.DefaultAi;
         _selectedWaymark = _waymarkMemory.GetValueOrDefault(scenario.Phase.Zone);
         if (_selectedWaymark < 0 || _selectedWaymark >= scenario.Phase.Zone.WaymarkPresets.Count)
             _selectedWaymark = 0;

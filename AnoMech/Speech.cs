@@ -8,8 +8,8 @@ namespace AnoMech;
 // Framework thread only. A missing or broken voice is logged once and then stays silent.
 internal sealed class Speech : IDisposable
 {
+    // Queued, not purged: two calls landing in the same frame are both heard.
     private const int SpeakAsync = 1;
-    private const int PurgeBeforeSpeak = 2;
 
     private object? voice;
     private bool unavailable;
@@ -20,7 +20,7 @@ internal sealed class Speech : IDisposable
         try
         {
             voice ??= Activator.CreateInstance(Type.GetTypeFromProgID("SAPI.SpVoice", throwOnError: true)!);
-            voice!.GetType().InvokeMember("Speak", BindingFlags.InvokeMethod, null, voice, [text, SpeakAsync | PurgeBeforeSpeak]);
+            voice!.GetType().InvokeMember("Speak", BindingFlags.InvokeMethod, null, voice, [text, SpeakAsync]);
         }
         catch (Exception e)
         {

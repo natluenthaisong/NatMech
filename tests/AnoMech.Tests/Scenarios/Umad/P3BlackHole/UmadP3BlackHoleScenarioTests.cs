@@ -74,6 +74,14 @@ public class UmadP3BlackHoleScenarioTests
             .ShouldKill(ActionId.SlapHappy_FinalSlap, MeleeDpsA);
 
     [Test]
+    public void DoubleTethersIsTheDefaultStrat()
+    {
+        var scenario = new UmadP3BlackHoleScenario();
+        Assert.That(((UmadP3BlackHoleAi)scenario.AiStrats[scenario.DefaultAi]).Order,
+            Is.EqualTo(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers));
+    }
+
+    [Test]
     public void ShockingImpactShortABodyKillsStackers()
         => BlackHole(MeleeDpsA)
             .TeleportAt(55f, to: new(-10, 0))

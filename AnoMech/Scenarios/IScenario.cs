@@ -23,6 +23,9 @@ public interface IScenario
     // from each strat's IScenarioAi.Group.
     IReadOnlyList<IScenarioAi> AiStrats { get; }
 
+    // The strat the menu picks when this scenario is selected.
+    int DefaultAi => 0;
+
     // How far into the phase's track the real fight is when this scenario starts.
     float BgmSecondsAtStart => 0f;
 
