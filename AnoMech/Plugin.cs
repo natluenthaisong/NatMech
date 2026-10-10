@@ -1,4 +1,6 @@
 using System;
+using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Command;
 using Dalamud.Game.DutyState;
 using Dalamud.IoC;
@@ -63,6 +65,7 @@ public sealed class Plugin : IDalamudPlugin
     // Optional, detached module: resolves the player's own actions client-side.
     internal static UserActions UserActions { get; private set; } = null!;
     internal static LogManager LogManager { get; private set; } = null!;
+    internal static Speech Speech { get; } = new();
     private ConfigWindow ConfigWindow { get; init; }
     // Static so MultiplayerManager can read the host's current selection.
     internal static MainWindow MainWindow { get; private set; } = null!;
@@ -115,7 +118,7 @@ public sealed class Plugin : IDalamudPlugin
 
             CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Open NatMech. Subcommands: config, mp, start, reset, leave"
+                HelpMessage = "Open NatMech. Subcommands: config, mp, start, pause, reset, leave"
             });
             CommandManager.AddHandler(CommandAlias, new CommandInfo(OnCommand)
             {
@@ -226,6 +229,7 @@ public sealed class Plugin : IDalamudPlugin
         DutyState.DutyStarted -= OnDutyStarted;
         DutyState.DutyWiped -= OnDutyWiped;
         DutyState.DutyCompleted -= OnDutyCompleted;
+        Speech.Dispose();
 
         WindowSystem.RemoveAllWindows();
 
@@ -340,6 +344,9 @@ public sealed class Plugin : IDalamudPlugin
             case "reset":
                 ResetScenario();
                 break;
+            case "pause":
+                TogglePause();
+                break;
             case "leave":
                 LeaveInstance();
                 break;
@@ -401,8 +408,37 @@ public sealed class Plugin : IDalamudPlugin
     public void ToggleConfigUi() => ConfigWindow.Toggle();
     public void ToggleMainUi() => MainWindow.Toggle();
 
+    // Solo only: a session runs on the host's clock, and peers would drift from a paused host.
+    internal void TogglePause()
+    {
+        if (Multiplayer.SessionCode != null)
+        {
+            ChatGui.PrintError("[NatMech] Pause only works outside multiplayer.");
+            return;
+        }
+        if (!Game.CanPauseByUser)
+        {
+            ChatGui.PrintError("[NatMech] Nothing to pause: no run is going, or it already ended in a death.");
+            return;
+        }
+        Game.TogglePauseByUser();
+    }
+
     private void DrawScenarioOverlay()
     {
-        if (InSimArena) Game.ActiveScenario?.DrawOverlay();
+        if (!InSimArena) return;
+        Game.ActiveScenario?.DrawOverlay();
+        if (Game.PausedByUser) DrawPausedBanner();
+    }
+
+    private static void DrawPausedBanner()
+    {
+        const string text = "PAUSED  -  /nat pause to resume";
+        var viewport = ImGui.GetMainViewport();
+        var size = ImGui.CalcTextSize(text);
+        var at = new Vector2(viewport.Pos.X + (viewport.Size.X - size.X) / 2f, viewport.Pos.Y + viewport.Size.Y * 0.18f);
+        var drawList = ImGui.GetForegroundDrawList();
+        drawList.AddRectFilled(at - new Vector2(10f, 6f), at + size + new Vector2(10f, 6f), 0xB0000000, 4f);
+        drawList.AddText(at, 0xFF40A6FF, text);
     }
 }

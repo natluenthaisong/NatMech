@@ -7,8 +7,9 @@ using AnoMech.Core.SimObjects;
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
 
 // Holes: the black holes whose tethers the strat gives this player. HoldAt: where to stand once
-// they hold them; null while the strat has only said "take it".
-public sealed record TetherGuide(IReadOnlyList<SimCharacter> Holes, Vector3? HoldAt);
+// they hold them; null while the strat has only said "take it". IssuedAt: scenario time; when two
+// players' guides name the same hole, the newer one is the strat's current owner.
+public sealed record TetherGuide(IReadOnlyList<SimCharacter> Holes, Vector3? HoldAt, float IssuedAt);
 
 // On-screen hint for the local player, read from what the selected strat told their seat: their
 // tethers highlighted, a line to the nearest point of a beam they still have to step on, and the
@@ -30,7 +31,10 @@ internal static class UmadP3BlackHoleTetherGuide
     {
         if (world.Party.Player is not { } player || !player.IsAlive()) return;
         if (!objects.TetherGuides.TryGetValue(player, out var guide)) return;
-        var mine = objects.Tethers.Where(t => t.A is { } hole && guide.Holes.Contains(hole)).ToList();
+        var mine = objects.Tethers
+            .Where(t => t.A is { } hole && guide.Holes.Contains(hole)
+                        && (ReferenceEquals(t.B, player) || !UmadP3BlackHoleCallouts.HandedOn(objects, player, guide, hole)))
+            .ToList();
         if (mine.Count == 0) return;
 
         var overlay = new WorldOverlay(world.Coordinates);
@@ -52,11 +56,13 @@ internal static class UmadP3BlackHoleTetherGuide
             return;
         }
 
+        var passing = UmadP3BlackHoleCallouts.MustPass(objects, player, guide);
+        if (passing) overlay.Text(head, "Pass tether", TakeColor);
         if (guide.HoldAt is not { } spot) return;
         overlay.Circle(spot, HoldSpotRadius, SpotColor);
         if (Vector2.Distance(Flat(player.Position), Flat(spot)) <= HoldSpotRadius) return;
         overlay.Line(player.Position, spot, SpotColor, 2f);
-        overlay.Text(head, "Hold here", SpotColor);
+        if (!passing) overlay.Text(head, "Hold here", SpotColor);
     }
 
     private static Vector3 NearestPointOnBeam(SimTether tether, Vector3 from)

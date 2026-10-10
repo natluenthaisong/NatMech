@@ -738,6 +738,14 @@ public unsafe class MainWindow : Window, IDisposable
         {
             if (DrawSemanticButton("Stop", actionSize, StopColor))
                 plugin.ResetScenario();
+            if (!inSession && (game.CanPauseByUser || game.PausedByUser))
+            {
+                ImGui.SameLine();
+                if (DrawSemanticButton(game.PausedByUser ? "Resume###pause" : "Pause###pause", actionSize, StartColor))
+                    plugin.TogglePause();
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("Freezes the fight's timeline, bosses and bots; you can still move and look around. Bind /nat pause to a macro for a hotkey.");
+            }
         }
         else if (inSession)
             multiplayerUi.DrawStartButton(actionSize);

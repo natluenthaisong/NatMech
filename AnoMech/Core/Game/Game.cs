@@ -41,9 +41,20 @@ public sealed class Game : IDisposable
     // run at real time — only the timeline of scheduled events stretches/compresses.
     public float EventTimeScale { get; set; } = 1f;
 
-    // Set by Game.Kill once the post-first-death freeze timer fires. While true,
-    // Tick is a no-op so scenario events, scheduler, and world all stop.
+    // Set by Game.Kill once the post-first-death freeze timer fires, or by the player's own
+    // pause. While true, Tick is a no-op so scenario events, scheduler, and world all stop.
     public bool Paused { get; set; }
+
+    // Never offered once a death has started the run's freeze: resuming would revive a failed run.
+    public bool PausedByUser { get; private set; }
+    public bool CanPauseByUser => IsScenarioActive && !deathOccurredThisRun && (!Paused || PausedByUser);
+
+    public void TogglePauseByUser()
+    {
+        if (!CanPauseByUser) return;
+        PausedByUser = !PausedByUser;
+        Paused = PausedByUser;
+    }
     public bool IsScenarioActive => activeScenario is not null;
     public bool HasScenarioMistake => lastMistakeElapsed is not null;
     public bool HasScenarioFailed => deathOccurredThisRun;
@@ -556,6 +567,7 @@ public sealed class Game : IDisposable
         // BGM is the callers': resetting here would restart a same-track scenario switch.
 
         Paused = false;
+        PausedByUser = false;
         firstDeathScheduled = false;
         firstFreezeScheduled = false;
         scenarioFinishedElapsed = null;

@@ -12,6 +12,11 @@ Changes from AnoMech:
 - Dancing Mad P3 Black Hole: optional **tether guide**, an on-screen drawing of the tether(s) the
   selected strat gives you, where to step onto the beam, and where to hold it. Turn it on under
   Scenario settings; it draws solo and for a multiplayer host.
+- Dancing Mad P3 Black Hole: **callouts** worded like cactbot's (Get North tether, Get both
+  tethers, Pass tether), as on-screen text and optionally the Windows voice. The sim never reaches
+  ACT/IINACT, so cactbot itself can't call it.
+- **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
+  Outside multiplayer only.
 
 ### Install NatMech
 

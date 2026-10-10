@@ -649,7 +649,8 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         if (state.Roles.Get(seat) is not { } player) return;
         state.ScenarioObjects.TetherGuides[player] = new TetherGuide(
             holes.OfType<SimCharacter>().ToList(),
-            holdAt is { } spot ? new Vector3(spot.X, 0f, spot.Y) : null);
+            holdAt is { } spot ? new Vector3(spot.X, 0f, spot.Y) : null,
+            world.Events.Elapsed);
     }
 
     private void ClearTetherGuide(int seat)

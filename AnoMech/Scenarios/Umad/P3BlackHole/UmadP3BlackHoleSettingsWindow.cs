@@ -121,6 +121,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         // Only the host's settings are read.
         var mpGuest = Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false };
         DrawTetherGuideToggle(mpGuest);
+        DrawCalloutToggles(mpGuest);
         DrawAutomarkersToggle(mpGuest);
         ImGui.Separator();
         DrawThunderIIIPlan(mpGuest);
@@ -141,6 +142,33 @@ public sealed class UmadP3BlackHoleSettingsWindow
             ImGui.SetTooltip(mpGuest
                 ? "Drawn from the strat, which only runs solo or on the host."
                 : "Highlights the tether(s) the selected strat gives you, a line to where to step onto the beam, and the spot to hold it. Needs a strat selected.");
+    }
+
+    private static void DrawCalloutToggles(bool mpGuest)
+    {
+        var callouts = Plugin.Config.BlackHoleCallouts;
+        var speak = Plugin.Config.SpeakBlackHoleCallouts;
+        ImGui.BeginDisabled(mpGuest);
+        if (ImGui.Checkbox("Black Hole callouts", ref callouts))
+        {
+            Plugin.Config.BlackHoleCallouts = callouts;
+            Plugin.Config.Save();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(mpGuest
+                ? "Called from the strat, which only runs solo or on the host."
+                : "Calls your tether jobs from the selected strat, worded like cactbot: Get North tether, Get both tethers, Pass tether. Needs a strat selected.");
+        ImGui.SameLine();
+        ImGui.BeginDisabled(!callouts);
+        if (ImGui.Checkbox("Speak them", ref speak))
+        {
+            Plugin.Config.SpeakBlackHoleCallouts = speak;
+            Plugin.Config.Save();
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("Reads each callout aloud with the Windows voice (Settings > Time & language > Speech).");
+        ImGui.EndDisabled();
     }
 
     private void DrawAutomarkersToggle(bool mpGuest)

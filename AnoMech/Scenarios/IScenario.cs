@@ -43,7 +43,7 @@ public interface IScenario
     void DrawMultiplayerSettings() { }
 
     // Every frame while this scenario runs in the sim arena: on-screen guides drawn over the game
-    // (see WorldOverlay).
+    // (see WorldOverlay) and callouts. UI thread only; never runs headless.
     void DrawOverlay() { }
 
     // The overrides object DrawSettings edits, for the lobby's read-only summary

@@ -16,6 +16,7 @@ using AnoMech.Core.Game.Party;
 using AnoMech.Core.Map;
 using AnoMech.Core.SimObjects;
 using AnoMech.Multiplayer;
+using Dalamud.Game.Gui.Toast;
 using static AnoMech.Scenarios.Umad.UmadConstants;
 
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
@@ -34,12 +35,25 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     public void DrawMultiplayerSettings() => settingsWindow.DrawMultiplayerSettings();
     private readonly UmadP3BlackHoleSettingsWindow settingsWindow = new();
 
+    private readonly UmadP3BlackHoleCallouts callouts = new();
+
     // A guest never runs the strat, so it has no guides; LastState there is a stale solo run's.
     public void DrawOverlay()
     {
-        if (!Plugin.Config.ShowBlackHoleTetherGuide || LastState is not { } s) return;
+        if (LastState is not { } s) return;
         if (Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false }) return;
-        UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
+        if (Plugin.Config.BlackHoleCallouts && world.Party.Player is { } player
+            && callouts.Next(s.ScenarioObjects, player) is { } call)
+            Announce(call);
+        if (Plugin.Config.ShowBlackHoleTetherGuide)
+            UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
+    }
+
+    private static void Announce(string call)
+    {
+        var speak = Plugin.Config.SpeakBlackHoleCallouts;
+        Plugin.ToastGui.ShowQuest(call, new QuestToastOptions { PlaySound = !speak });
+        if (speak) Plugin.Speech.Say(call);
     }
 
     public IReadOnlyList<IScenarioAi> AiStrats =>
@@ -76,6 +90,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         party = worldParam.Party;
         state = new UmadP3BlackHoleState(world, settingsWindow.Overrides);
         LastState = state;
+        callouts.Reset();
         var strat = selectedAi is { } idx && idx >= 0 && idx < AiStrats.Count
             ? (UmadP3BlackHoleAi)AiStrats[idx]
             : null;

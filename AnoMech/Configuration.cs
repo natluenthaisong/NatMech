@@ -16,6 +16,8 @@ public class Configuration : IPluginConfiguration
     public bool SuppressBgm { get; set; } = true;
     public bool EnableMechanicResultMarks { get; set; } = false;
     public bool ShowBlackHoleTetherGuide { get; set; } = false;
+    public bool BlackHoleCallouts { get; set; } = true;
+    public bool SpeakBlackHoleCallouts { get; set; } = false;
     public bool AutoCollapseWhileRunning { get; set; } = false;
     public string LastSelectedScenario { get; set; } = "";
 

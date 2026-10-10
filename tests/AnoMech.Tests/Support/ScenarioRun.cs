@@ -113,7 +113,7 @@ internal sealed record ScenarioRun(
             if (!game.IsScenarioActive)
                 failure = "did not start";
 
-            while (failure is null && !game.HasScenarioSucceeded && !game.Paused)
+            while (failure is null && !game.HasScenarioSucceeded && (!game.Paused || game.PausedByUser))
             {
                 if (elapsed >= TimeoutSeconds)
                 {
