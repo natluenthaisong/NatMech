@@ -127,3 +127,7 @@ New project `AnoMech.Standalone/` (in `AnoMech.sln`), `net10.0-windows`, `UseWin
 - 2026-10-11: M0 done. `AnoMech.Standalone` (NatMechPractice.exe) builds in the solution with
   linked fakes and an app-side `DalamudServices` (namespace AnoMech.Tests, no NUnit) in `Host/`;
   datamining download moved to `build/Datamining.targets`; all tests pass.
+- 2026-10-11: M1 done. `Host/SimHost` (fixed 1/60 s steps, keyboard walk at 6 y/s clamped to the
+  19.5 y wall, chat captured via `Host/CaptureService`). `NatMechPractice.exe --selftest out.log`
+  plays a full god-mode run standing still: finishes at ~162 s, logs deaths and tether mistakes,
+  exit 0. Run it under `timeout` from bash: a stale build without `--selftest` opens a window.
