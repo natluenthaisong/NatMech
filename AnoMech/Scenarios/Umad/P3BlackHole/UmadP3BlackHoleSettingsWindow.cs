@@ -120,9 +120,27 @@ public sealed class UmadP3BlackHoleSettingsWindow
     {
         // Only the host's settings are read.
         var mpGuest = Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false };
+        DrawTetherGuideToggle(mpGuest);
         DrawAutomarkersToggle(mpGuest);
         ImGui.Separator();
         DrawThunderIIIPlan(mpGuest);
+    }
+
+    // A viewer preference, not a fight setting: saved in the plugin config, never broadcast.
+    private static void DrawTetherGuideToggle(bool mpGuest)
+    {
+        var show = Plugin.Config.ShowBlackHoleTetherGuide;
+        ImGui.BeginDisabled(mpGuest);
+        if (ImGui.Checkbox("Black Hole tether guide (on-screen drawing)", ref show))
+        {
+            Plugin.Config.ShowBlackHoleTetherGuide = show;
+            Plugin.Config.Save();
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(mpGuest
+                ? "Drawn from the strat, which only runs solo or on the host."
+                : "Highlights the tether(s) the selected strat gives you, a line to where to step onto the beam, and the spot to hold it. Needs a strat selected.");
     }
 
     private void DrawAutomarkersToggle(bool mpGuest)

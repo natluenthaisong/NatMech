@@ -42,6 +42,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDutyState DutyState { get; private set; } = null!;
     [PluginService] internal static ICondition Condition { get; private set; } = null!;
     [PluginService] internal static IJobGauges JobGauges { get; private set; } = null!;
+    [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
 
     private const string CommandName = "/natmech";
     private const string CommandAlias = "/nat";
@@ -122,6 +123,7 @@ public sealed class Plugin : IDalamudPlugin
             });
             commandsRegistered = true;
 
+            PluginInterface.UiBuilder.Draw += DrawScenarioOverlay;
             PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
             Framework.Update += OnFrameworkUpdate;
 
@@ -214,6 +216,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void DisposeSubsystems()
     {
+        PluginInterface.UiBuilder.Draw -= DrawScenarioOverlay;
         PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
         Framework.Update -= OnFrameworkUpdate;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
@@ -397,4 +400,9 @@ public sealed class Plugin : IDalamudPlugin
 
     public void ToggleConfigUi() => ConfigWindow.Toggle();
     public void ToggleMainUi() => MainWindow.Toggle();
+
+    private void DrawScenarioOverlay()
+    {
+        if (InSimArena) Game.ActiveScenario?.DrawOverlay();
+    }
 }

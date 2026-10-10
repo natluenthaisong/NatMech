@@ -34,6 +34,14 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     public void DrawMultiplayerSettings() => settingsWindow.DrawMultiplayerSettings();
     private readonly UmadP3BlackHoleSettingsWindow settingsWindow = new();
 
+    // A guest never runs the strat, so it has no guides; LastState there is a stale solo run's.
+    public void DrawOverlay()
+    {
+        if (!Plugin.Config.ShowBlackHoleTetherGuide || LastState is not { } s) return;
+        if (Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false }) return;
+        UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
+    }
+
     public IReadOnlyList<IScenarioAi> AiStrats =>
     [
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion),

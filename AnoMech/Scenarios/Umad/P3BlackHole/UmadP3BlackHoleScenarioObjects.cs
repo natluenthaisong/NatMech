@@ -31,6 +31,9 @@ public sealed class UmadP3BlackHoleScenarioObjects
              .OrderBy(t => ClockwiseFrom(TetherSortFrom.RadiansFromNorth, t.A!.Position))
              .ToList();
 
+    // Written by the strat for every seat, read by the on-screen guide for the local player.
+    public Dictionary<SimCharacter, TetherGuide> TetherGuides { get; } = new();
+
     private static float ClockwiseFrom(float north, Vector3 p)
     {
         var d = (MathF.Atan2(p.X, -p.Z) - north) % MathF.Tau;

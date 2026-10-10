@@ -42,6 +42,10 @@ public interface IScenario
     // tank's mitigation plan).
     void DrawMultiplayerSettings() { }
 
+    // Every frame while this scenario runs in the sim arena: on-screen guides drawn over the game
+    // (see WorldOverlay).
+    void DrawOverlay() { }
+
     // The overrides object DrawSettings edits, for the lobby's read-only summary
     // (ScenarioSettingsSummary); null when there is nothing to configure.
     object? SettingsOverrides => null;

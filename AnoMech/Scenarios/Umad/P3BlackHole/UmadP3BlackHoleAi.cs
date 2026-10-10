@@ -504,8 +504,12 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         mt.MoveTo(spot);
     }
 
-    private void ReturnToMiddle(int playerIndex) =>
-        state.Roles.Get(TetherSeat(playerIndex))?.MoveTo(new Vector3(0f, 0f, 0f));
+    private void ReturnToMiddle(int playerIndex)
+    {
+        var seat = TetherSeat(playerIndex);
+        ClearTetherGuide(seat);
+        state.Roles.Get(seat)?.MoveTo(new Vector3(0f, 0f, 0f));
+    }
 
     // Look Upon (rect along the KefkaPosition[lookKefkaIndex] axis through centre, 16y
     // wide) split. The tether holder rides the last black hole's tether out to the arena
@@ -546,6 +550,8 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         var holderSpot = LookUponHolderSpot(holderSeat, lookKefkaIndex);
         var holderRole = state.Roles[holderSeat];
         coords[(int)holderRole] = new Vector2(holderSpot.X, holderSpot.Z);
+        if (TetherHeldBy(state.Roles.Get(holderSeat))?.A is { } heldHole)
+            GuideTethers(holderSeat, [heldHole], new Vector2(holderSpot.X, holderSpot.Z));
         return AiMove.Create(coords).NaturalOrder();
     }
 
@@ -579,6 +585,7 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
             AnoMech.Core.DiagnosticLog.Warn($"[UmadP3BlackHoleAi] GrabTether: tetherIndex {tetherIndex} not found in ScenarioObjects.Tethers ({state.ScenarioObjects.Tethers.Count} known) -- {role} sent nowhere.");
             return;
         }
+        GuideTethers(seat, [tether.A]);
         var bh = tether.A is { } a ? new Vector2(a.Position.X, a.Position.Z) : Vector2.Zero;
         var from = player is null ? "(no player)" : $"({player.Position.X:F1},{player.Position.Z:F1})";
         AnoMech.Core.DiagnosticLog.Info($"[UmadP3BlackHoleAi] GrabTether: {role} intercepting tetherIndex {tetherIndex} (black hole at ({bh.X:F1},{bh.Y:F1})) from {from}, margin={intercept}.");
@@ -611,6 +618,7 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         // The raw spot can coincide with a passive hole's avoid radius (both ~14y out), where
         // ClampOutside and Steer fight and the bot stalls; push it clear up front.
         var spot = world.Obstacles.ClampOutside(rawSpot, margin: 2f);
+        GuideTethers(seat, [blackHole], spot);
         AnoMech.Core.DiagnosticLog.Info($"[UmadP3BlackHoleAi] PullTether: {role} held at ({heldPos.X:F1},{heldPos.Y:F1}), black hole at ({bhPos.X:F1},{bhPos.Y:F1}) -- moving to ({spot.X:F1},{spot.Y:F1}) (dist {Vector2.Distance(heldPos, spot):F1}y){(spot != rawSpot ? $" [nudged from ({rawSpot.X:F1},{rawSpot.Y:F1}) to clear an obstacle]" : "")}.");
         player?.MoveTo(new Vector3(spot.X, 0f, spot.Y));
     }
@@ -636,9 +644,22 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
             ? null
             : state.ScenarioObjects.Tethers.FirstOrDefault(t => ReferenceEquals(t.B, player));
 
+    private void GuideTethers(int seat, IEnumerable<SimCharacter?> holes, Vector2? holdAt = null)
+    {
+        if (state.Roles.Get(seat) is not { } player) return;
+        state.ScenarioObjects.TetherGuides[player] = new TetherGuide(
+            holes.OfType<SimCharacter>().ToList(),
+            holdAt is { } spot ? new Vector3(spot.X, 0f, spot.Y) : null);
+    }
+
+    private void ClearTetherGuide(int seat)
+    {
+        if (state.Roles.Get(seat) is { } player)
+            state.ScenarioObjects.TetherGuides.Remove(player);
+    }
+
     private const float BothTethersGrabInterval = 0.2f;
     private const float BothTethersInterceptMargin = 5f;
-    private const float BothTethersHoldRadius = 10f;
     private readonly HashSet<int> pulledDoubleTethers = new();
 
     private void ScheduleBothTethersGrab(float fromTime, float toTime, int playerIndex)
@@ -655,23 +676,23 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         if (tethers.FirstOrDefault(t => !ReferenceEquals(t.B, player)) is { } loose)
         {
             pulledDoubleTethers.Remove(seat);
+            GuideTethers(seat, tethers.Select(t => t.A));
             player.Intercept(loose, BothTethersInterceptMargin);
             return;
         }
         if (tethers.Count < 2 || !pulledDoubleTethers.Add(seat)) return;
         var spot = BetweenBothHoles(tethers);
+        GuideTethers(seat, tethers.Select(t => t.A), spot);
         (player as ISimPartyMember)?.UseSprint(2f);
         player.MoveTo(new Vector3(spot.X, 0f, spot.Y), speed: AiManager.SprintSpeed);
     }
 
     private Vector2 BetweenBothHoles(IReadOnlyList<SimTether> tethers)
     {
-        var bisector = Vector2.Zero;
-        foreach (var tether in tethers)
-            if (tether.A is { } hole)
-                bisector += Vector2.Normalize(new Vector2(hole.Position.X, hole.Position.Z));
-        if (bisector.LengthSquared() < 1e-4f) return Vector2.Zero;
-        return world.Obstacles.ClampOutside(Vector2.Normalize(bisector) * BothTethersHoldRadius, margin: 2f);
+        var holes = tethers.Select(t => t.A).OfType<SimCharacter>().ToList();
+        if (holes.Count == 0) return Vector2.Zero;
+        var midpoint = holes.Aggregate(Vector2.Zero, (sum, hole) => sum + new Vector2(hole.Position.X, hole.Position.Z)) / holes.Count;
+        return world.Obstacles.ClampOutside(midpoint, margin: 2f);
     }
 
     // Non-tether players hold centre for the whole wave, so a pulled hole must clear
