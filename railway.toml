@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "AnoMech.Relay.Host/Dockerfile"
+watchPatterns = ["AnoMech.Relay/**", "AnoMech.Relay.Host/**", "railway.toml"]
+
+[deploy]
+startCommand = "dotnet AnoMech.Relay.Host.dll --railway-http-ingress"
+healthcheckPath = "/info"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
