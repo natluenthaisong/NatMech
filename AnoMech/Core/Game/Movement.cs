@@ -53,7 +53,20 @@ internal class Movement(SimCharacter parent)
     // Narrower than IsMoving: true only while a PushInDirectionEased is mid-flight.
     public bool IsEasedMoving => easeDuration != null;
 
-    public virtual void MoveTo(Vector3 t, float sp = 6f, float? finalRot = null, ushort tl = RunTimelineId, bool baseOverride = true)
+    // Where a strat last sent this character, kept even when the move itself is refused (a real
+    // player), so it can be shown to them as a hint. A Follow or Intercept clears it: those track a
+    // moving target, not a spot.
+    public Vector3? Planned { get; private set; }
+
+    public void Plan(Vector3 t) => Planned = t;
+
+    public void MoveTo(Vector3 t, float sp = 6f, float? finalRot = null, ushort tl = RunTimelineId, bool baseOverride = true)
+    {
+        if (!internalReissue) Planned = t;
+        MoveToCore(t, sp, finalRot, tl, baseOverride);
+    }
+
+    protected virtual void MoveToCore(Vector3 t, float sp, float? finalRot, ushort tl, bool baseOverride)
         => InternalMoveTo(t, sp, finalRot, tl, baseOverride);
 
     // forced: the mechanic itself is taking control (UMAD P1's Confusion), as opposed to a
@@ -69,6 +82,7 @@ internal class Movement(SimCharacter parent)
             return;
         }
         if (!forced && Locked) return;
+        Planned = null;
         followTarget = target;
         followForced = forced;
         followCooldown = 0f;
@@ -86,6 +100,7 @@ internal class Movement(SimCharacter parent)
     public void Intercept(SimTether? tether, float margin = 3f)
     {
         if (Locked) return;
+        Planned = null;
         followTarget = null;
         interceptTether = tether;
         interceptMargin = margin;
@@ -370,11 +385,11 @@ internal sealed class PlayerMovement(SimCharacter parent) : Movement(parent)
 {
     // Normally a no-op, since AiManager addresses every slot uniformly; DebugBotControl lets
     // the AI drive the real character (SyncInputLock then zeroes manual input via IsMoving).
-    public override void MoveTo(Vector3 t, float sp = 6f, float? finalRot = null, ushort tl = RunTimelineId, bool baseOverride = true)
+    protected override void MoveToCore(Vector3 t, float sp, float? finalRot, ushort tl, bool baseOverride)
     {
         if (DebugBotControl.Enabled)
         {
-            base.MoveTo(t, sp, finalRot, tl, baseOverride);
+            base.MoveToCore(t, sp, finalRot, tl, baseOverride);
             return;
         }
         // NO-OP - player cannot be moved like this
@@ -396,7 +411,7 @@ internal sealed class NetworkPuppetMovement(SimCharacter parent) : Movement(pare
     // The owner's own client applies their lock.
     protected override bool Locked => false;
 
-    public override void MoveTo(Vector3 t, float sp = 6f, float? finalRot = null, ushort tl = RunTimelineId, bool baseOverride = true)
+    protected override void MoveToCore(Vector3 t, float sp, float? finalRot, ushort tl, bool baseOverride)
     {
         // NO-OP - position comes from the network, not local pathing
     }

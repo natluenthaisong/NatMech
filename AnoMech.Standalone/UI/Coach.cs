@@ -24,11 +24,13 @@ internal sealed class Coach : IDisposable
     private static readonly Color TakeColour = Color.FromArgb(255, 200, 0);
     private static readonly Color HeldColour = Color.FromArgb(80, 255, 80);
     private static readonly Color SpotColour = Color.FromArgb(0, 220, 255);
+    private static readonly Color HintColour = Color.FromArgb(255, 96, 255);
 
     private readonly SimHost host;
     private readonly UmadP3BlackHoleCallouts callouts = new();
     private readonly List<(string Text, Color Colour, double At)> calls = new();
     private readonly List<(AoeQuery Query, double At)> impacts = new();
+    private readonly Font labelFont = new("Segoe UI", 9f, FontStyle.Bold);
     private int mistakesShown;
 
     public Coach(SimHost host)
@@ -61,7 +63,7 @@ internal sealed class Coach : IDisposable
 
     private void OnAoeEvaluated(AoeQuery query) => impacts.Add((query, host.Time));
 
-    public void DrawOnArena(Graphics g, ArenaView arena, bool guide)
+    public void DrawOnArena(Graphics g, ArenaView arena, bool guide, bool spot)
     {
         DrawTelegraphs(g, arena);
         double now = host.Time;
@@ -70,7 +72,24 @@ internal sealed class Coach : IDisposable
             var alpha = (int)(170 * (1 - (now - at) / ImpactSeconds));
             if (alpha > 0) FillShape(g, arena, query, Color.FromArgb(alpha, 255, 90, 60));
         }
+        if (spot) DrawSpotHint(g, arena);
         if (guide) DrawGuide(g, arena);
+    }
+
+    private void DrawSpotHint(Graphics g, ArenaView arena)
+    {
+        if (host.State is not { } state || host.Player is not { } player) return;
+        if (UmadP3BlackHoleSpotHint.For(state.ScenarioObjects, host.World, player) is not { } hint) return;
+        using var pen = new Pen(HintColour, 2.5f);
+        arena.DrawCircle(g, pen, hint.Spot, UmadP3BlackHoleSpotHint.SpotRadius);
+        var at = arena.ToScreen(hint.Spot);
+        ArenaView.DrawCentredText(g, UmadP3BlackHoleSpotHint.Label(hint), labelFont, HintColour,
+            at with { Y = at.Y - arena.ToPixels(UmadP3BlackHoleSpotHint.SpotRadius) - 9 });
+        if (Vector2.Distance(new(player.Position.X, player.Position.Z), new(hint.Spot.X, hint.Spot.Z)) > UmadP3BlackHoleSpotHint.SpotRadius)
+        {
+            pen.DashStyle = DashStyle.Dot;
+            g.DrawLine(pen, arena.ToScreen(player.Position), at);
+        }
     }
 
     // Shown for the whole cast, as the game's omen would be.
@@ -123,5 +142,9 @@ internal sealed class Coach : IDisposable
         }
     }
 
-    public void Dispose() => AoeQuery.Evaluated -= OnAoeEvaluated;
+    public void Dispose()
+    {
+        AoeQuery.Evaluated -= OnAoeEvaluated;
+        labelFont.Dispose();
+    }
 }

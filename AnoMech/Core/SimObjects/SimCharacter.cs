@@ -141,6 +141,8 @@ public abstract class SimCharacter(Coordinates coordinates) : ISimObject, IPosit
     public bool IsIntercepting => Movement.IsIntercepting;
     public bool IsEasedMoving => Movement.IsEasedMoving;
     public Vector3? MoveDestination => Movement.Destination;
+    public Vector3? PlannedDestination => Movement.Planned;
+    public void PlanMove(Vector3 target) => Movement.Plan(target);
 
     // forced: the mechanic is taking control, not a strat positioning a bot (see
     // Movement.Follow). Virtual so SimNetworkPuppet can hand a forced follow to its owner.

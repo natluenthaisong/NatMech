@@ -142,6 +142,19 @@ public sealed class UmadP3BlackHoleSettingsWindow
             ImGui.SetTooltip(mpGuest
                 ? "Drawn from the strat, which only runs solo or on the host."
                 : "Highlights the tether(s) the selected strat gives you, a line to where to step onto the beam, and the spot to hold it. Needs a strat selected.");
+
+        var spot = Plugin.Config.ShowBlackHoleSpotHint;
+        ImGui.BeginDisabled(mpGuest);
+        if (ImGui.Checkbox("Black Hole safe/stack spot (on-screen drawing)", ref spot))
+        {
+            Plugin.Config.ShowBlackHoleSpotHint = spot;
+            Plugin.Config.Save();
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(mpGuest
+                ? "Drawn from the strat, which only runs solo or on the host."
+                : "Marks where the selected strat sends your seat for each mechanic (Slap Happy, Edict, Look upon Me, Thunder, implosion, Stomp-a-Mole towers, back to the stack), with a line to it. Labelled Stack when teammates go there too, Safe spot otherwise.");
     }
 
     private static void DrawCalloutToggles(bool mpGuest)

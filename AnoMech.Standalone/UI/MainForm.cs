@@ -15,6 +15,7 @@ internal sealed class MainForm : Form
     private readonly TextBox seedBox = new() { Width = 90, PlaceholderText = "random" };
     private readonly CheckBox godBox = new() { Text = "God mode", AutoSize = true };
     private readonly CheckBox guideBox = new() { Text = "Tether guide", AutoSize = true, Checked = true };
+    private readonly CheckBox spotBox = new() { Text = "Safe/stack spot", AutoSize = true, Checked = true };
     private readonly CheckBox speakBox = new() { Text = "Speak callouts", AutoSize = true };
     private readonly Button startButton = new() { Text = "Start (R)", AutoSize = true };
     private readonly Button pauseButton = new() { Text = "Pause (Space)", AutoSize = true };
@@ -42,7 +43,7 @@ internal sealed class MainForm : Form
         var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 38, Padding = new Padding(6, 6, 6, 0), WrapContents = false };
         toolbar.Controls.AddRange([
             Label("Role"), roleBox, Label("Strat"), stratBox, Label("Seed"), seedBox,
-            startButton, pauseButton, godBox, guideBox, speakBox,
+            startButton, pauseButton, godBox, guideBox, spotBox, speakBox,
         ]);
         Controls.Add(arena);
         Controls.Add(side);
@@ -51,8 +52,9 @@ internal sealed class MainForm : Form
         startButton.Click += (_, _) => Restart();
         pauseButton.Click += (_, _) => TogglePause();
         guideBox.CheckedChanged += (_, _) => arena.Focus();
+        spotBox.CheckedChanged += (_, _) => arena.Focus();
         speakBox.CheckedChanged += (_, _) => arena.Focus();
-        arena.DrawOverlay = (g, _) => coach?.DrawOnArena(g, arena, guideBox.Checked);
+        arena.DrawOverlay = (g, _) => coach?.DrawOnArena(g, arena, guideBox.Checked, spotBox.Checked);
         frameTimer.Tick += (_, _) => Frame();
         Shown += (_, _) => { Restart(); frameTimer.Start(); };
     }

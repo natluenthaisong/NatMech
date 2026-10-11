@@ -53,6 +53,8 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         for (; mistakesShown < tetherMistakes.Count; mistakesShown++)
             calloutBanner.ShowMistake(tetherMistakes[mistakesShown], speak);
         calloutBanner.Draw();
+        if (Plugin.Config.ShowBlackHoleSpotHint)
+            UmadP3BlackHoleSpotHint.Draw(s.ScenarioObjects, world);
         if (Plugin.Config.ShowBlackHoleTetherGuide)
             UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
     }

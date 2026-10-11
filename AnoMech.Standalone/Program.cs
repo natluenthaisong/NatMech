@@ -51,7 +51,7 @@ internal static class Program
             coach.Update(speak: false);
         }
         using var arena = new UI.ArenaView { Size = new Size(820, 820), Host = host };
-        arena.DrawOverlay = (g, _) => coach.DrawOnArena(g, arena, guide: true);
+        arena.DrawOverlay = (g, _) => coach.DrawOnArena(g, arena, guide: true, spot: true);
         using var side = new UI.SidePanel { Size = new Size(340, 820) };
         side.Show(host, coach, seed);
         using var bitmap = new Bitmap(1160, 820);

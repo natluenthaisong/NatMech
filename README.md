@@ -12,6 +12,10 @@ Changes from AnoMech:
 - Dancing Mad P3 Black Hole: optional **tether guide**, an on-screen drawing of the tether(s) the
   selected strat gives you, where to step onto the beam, and where to hold it. Turn it on under
   Scenario settings; it draws solo and for a multiplayer host.
+- Dancing Mad P3 Black Hole: **safe/stack spot**, drawn the way Splatoon does: a circle where the
+  selected strat sends you for each mechanic (Slap Happy, Edict, Look upon Me, Thunder, implosion,
+  Stomp-a-Mole towers, back to the stack) with a line to it, labelled Stack or Safe spot. On by
+  default; toggle it under Scenario settings.
 - Dancing Mad P3 Black Hole: **callouts** worded like cactbot's: your line number, Slap Happy,
   Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your
   tether jobs (Get North tether, Get both tethers, Pass tether). Shown on screen, optionally read
@@ -35,7 +39,7 @@ Save, then install **NatMech** from the plugin installer.
 
 `AnoMech.Standalone` builds `NatMechPractice.exe`, a Windows app that runs the same Black Hole sim
 top-down in 2D, with no FFXIV install or login needed. You steer your dot, the bots play the
-selected strat, and the callouts, tether guide, mistake log and pause all work. Attacks are shaded as
+selected strat, and the callouts, tether guide, safe/stack spot, mistake log and pause all work. Attacks are shaded as
 they're cast and flash where they land.
 
 Build and run it (needs the .NET 10 SDK and Dalamud's libraries, which XIVLauncher keeps in
