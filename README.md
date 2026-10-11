@@ -31,7 +31,7 @@ Changes from AnoMech:
   your tether, or held someone else's), in chat and on screen, and count against a clean run.
 - Dancing Mad **Playground: Merry-go-round** (Solo, or the Conga train strat): a toy, not a fight.
   It runs until you drop, then reports how long you lasted against your best.
-  - P1's Tele-portent arrows stand in a ring round Chaos; each launches you onto the next, so you
+  - 16 of P1's Tele-portent arrows stand in a ring round Chaos; each launches you onto the next, so you
     can ride arrow to arrow.
   - Exdeath walks you down, faster over time, but can't catch you while you ride.
   - Chaos beams the spot you stood on a moment ago.

@@ -26,7 +26,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     public bool Endless => true;
     public IReadOnlyList<IScenarioAi> AiStrats => [new UmadPlaygroundAi()];
 
-    private const int ArrowCount = 8;
+    private const int ArrowCount = 16;
     private const float RingRadius = 13f;
     private const float ArrowsAt = 1f;
     private const float ArrowTriggerRadius = 2f;

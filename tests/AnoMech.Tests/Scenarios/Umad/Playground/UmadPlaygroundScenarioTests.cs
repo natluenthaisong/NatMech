@@ -86,9 +86,9 @@ public class UmadPlaygroundScenarioTests
     [Test]
     public void EachArrowLaunchesYouOntoTheNextOne()
     {
-        var east = UmadPlaygroundScenario.LandingFrom(1);
-        Assert.That(Vector2.Distance(new(east.X, east.Z), new(13f, 0f)), Is.LessThan(1e-3f), "arrow 1 (south-east) lands you on arrow 2 (east)");
-        var south = UmadPlaygroundScenario.LandingFrom(7);
+        var east = UmadPlaygroundScenario.LandingFrom(3);
+        Assert.That(Vector2.Distance(new(east.X, east.Z), new(13f, 0f)), Is.LessThan(1e-3f), "arrow 3 lands you on arrow 4, due east");
+        var south = UmadPlaygroundScenario.LandingFrom(15);
         Assert.That(Vector2.Distance(new(south.X, south.Z), new(0f, 13f)), Is.LessThan(1e-3f), "the last arrow sends you round to the first");
     }
 
@@ -127,7 +127,7 @@ public class UmadPlaygroundScenarioTests
         ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
         {
             PlayerRole = Me,
-            StopAt = 20f,
+            StopAt = 30f,
             WriteArtifactsOnFailure = false,
             Takeovers = [new Takeover(1.5f, new Vector2(0f, 13f))],
             Probe = p =>
@@ -140,7 +140,7 @@ public class UmadPlaygroundScenarioTests
                     .Any(e => e.BNpcBaseId == UmadConstants.BNpcBaseId.Exdeath && e.HasStatus(UmadConstants.StatusId.Confused));
             },
         });
-        Assert.That(confused, Is.EqualTo(1), "eight launches in a row");
+        Assert.That(confused, Is.EqualTo(1), "sixteen launches in a row");
         Assert.That(exdeathConfused, Is.True);
         Assert.That(fightBacks, Is.EqualTo(1), "Chaos answers the second Thunder III");
     }
