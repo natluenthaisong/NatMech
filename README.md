@@ -29,12 +29,15 @@ Changes from AnoMech:
   aloud with the Windows voice. The sim never reaches ACT/IINACT, so cactbot itself can't call it.
 - Dancing Mad P3 Black Hole: **tether mistakes** are logged at each Nothingness (you weren't holding
   your tether, or held someone else's), in chat and on screen, and count against a clean run.
-- Dancing Mad **Playground: Merry-go-round** (Solo): P1's Tele-portent arrows stand in a ring round
-  Chaos, each launching you onto the next so you can ride arrow to arrow out of reach of Exdeath, who walks you down (faster over time) once you step off, and Chaos beams
-  the spot you stood on a moment ago. Ride a full lap and Exdeath gets Confused and Thunder IIIs
-  Chaos, who Damning Edicts him back after the second hit, just for the meme. Pick the Conga train strat and your party follows you nose to tail. From 15s Omega-M walks in and
-  stands between you and Chaos, shield up, blocking any beam that reaches him first. It runs until you drop and reports how long you lasted
-  against your best.
+- Dancing Mad **Playground: Merry-go-round** (Solo, or the Conga train strat): a toy, not a fight.
+  It runs until you drop, then reports how long you lasted against your best.
+  - P1's Tele-portent arrows stand in a ring round Chaos; each launches you onto the next, so you
+    can ride arrow to arrow.
+  - Exdeath walks you down, faster over time, but can't catch you while you ride.
+  - Chaos beams the spot you stood on a moment ago.
+  - Ride a full lap and Exdeath gets Confused and Thunder IIIs Chaos, who Damning Edicts him back.
+  - From 15s Omega-M walks in and stands between you and Chaos, shield up, blocking beams.
+  - Conga train: the rest of your party follows you nose to tail.
 - **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
   Outside multiplayer only.
 
