@@ -32,10 +32,10 @@ Changes from AnoMech:
 - Dancing Mad **Playground: Merry-go-round** (Solo, or the Conga train strat): a toy, not a fight.
   It runs until you drop, then reports how long you lasted against your best.
   - 16 of P1's Tele-portent arrows stand in a ring round Chaos; each launches you onto the next, so you
-    can ride arrow to arrow.
-  - Exdeath walks you down, faster over time, but can't catch you while you ride.
+    can ride arrow to arrow for one round. Step off the ring and back on to ride again.
+  - Exdeath walks you down, faster over time, but can't catch you mid-ride.
   - Chaos beams the spot you stood on a moment ago.
-  - Ride a full lap and Exdeath gets Confused and Thunder IIIs Chaos, who Damning Edicts him back.
+  - Finish the round and Exdeath gets Confused and Thunder IIIs Chaos, who Damning Edicts him back.
   - From 15s Omega-M covers you like a paladin: he leaps in front of you, holds Beyond Defense with
     his shield up between you and Chaos, blocking any beam that reaches him first, then leaps again.
   - Conga train: the rest of your party follows you nose to tail.

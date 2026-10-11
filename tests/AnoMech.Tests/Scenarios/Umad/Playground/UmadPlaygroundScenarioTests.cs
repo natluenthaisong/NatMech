@@ -123,6 +123,7 @@ public class UmadPlaygroundScenarioTests
         // The fake doesn't fly you, so standing on the south arrow launches you from it every 0.95s.
         var confused = 0;
         var fightBacks = 0;
+        var launches = 0;
         var exdeathConfused = false;
         ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
         {
@@ -136,11 +137,13 @@ public class UmadPlaygroundScenarioTests
                 var playground = (UmadPlaygroundScenario)p.Game.ActiveScenario!;
                 confused = playground.ConfusedExdeaths;
                 fightBacks = playground.FightBacks;
+                launches = playground.Launches;
                 exdeathConfused |= p.World.Children.OfType<SimEnemy>()
                     .Any(e => e.BNpcBaseId == UmadConstants.BNpcBaseId.Exdeath && e.HasStatus(UmadConstants.StatusId.Confused));
             },
         });
         Assert.That(confused, Is.EqualTo(1), "sixteen launches in a row");
+        Assert.That(launches, Is.EqualTo(16), "one round, then the ride holds you until you step off");
         Assert.That(exdeathConfused, Is.True);
         Assert.That(fightBacks, Is.EqualTo(1), "Chaos answers the second Thunder III");
     }

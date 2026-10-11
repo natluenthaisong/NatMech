@@ -12,7 +12,7 @@ namespace AnoMech.Scenarios.Umad.Playground;
 
 // Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows stand in a ring around
 // Chaos, each pointing at the next and launching you onto it, so you can ride the merry-go-round arrow
-// to arrow, out of Exdeath's reach while you ride. Exdeath walks you down, faster as time goes on;
+// to arrow for one round, out of Exdeath's reach while you ride; step off and back on to go again. Exdeath walks you down, faster as time goes on;
 // Chaos beams the spot you stood on a moment ago. Ride a whole lap and Exdeath gets Confused and
 // Thunder IIIs Chaos instead, and after the second hit Chaos Damning Edicts him back, just for the
 // meme. Then Omega-M leaps in from The Omega Protocol and covers you like a paladin: Beyond Defense
@@ -86,6 +86,9 @@ public sealed class UmadPlaygroundScenario : IScenario
     private float launchCooldown;
     private float catchCooldown;
     private int launches;
+    // One round per ride: after a full lap the arrows hold you till you step off the ring.
+    private bool rideOver;
+    internal int Launches => launches;
     // Caught by Exdeath, or would have been in god mode.
     internal int Catches { get; private set; }
     internal int ConfusedExdeaths { get; private set; }
@@ -114,6 +117,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         BeamHits = 0;
         omega = null;
         lapLaunches = 0;
+        rideOver = false;
         confusedFor = 0f;
         thunderHits = 0;
         chaosBusyUntil = 0f;
@@ -145,7 +149,11 @@ public sealed class UmadPlaygroundScenario : IScenario
             return;
         }
         RecordTrail(player, elapsed);
-        if (!Riding(player)) lapLaunches = 0;
+        if (!OnTheRing(player))
+        {
+            lapLaunches = 0;
+            rideOver = false;
+        }
         TickArrows(player, delta);
         TickExdeath(player, delta, elapsed);
     }
@@ -209,6 +217,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     private void TickArrows(SimCharacter player, float delta)
     {
         if (launchCooldown > 0f) { launchCooldown -= delta; return; }
+        if (rideOver) return;
         for (var i = 0; i < arrows.Count; i++)
         {
             if (arrows[i] is not { } arrow) continue;
@@ -236,6 +245,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         launches++;
         if (++lapLaunches < ArrowCount) return;
         lapLaunches = 0;
+        rideOver = true;
         ConfuseExdeath();
     }
 
@@ -292,8 +302,10 @@ public sealed class UmadPlaygroundScenario : IScenario
         FightBacks++;
     }
 
-    // In the air from a launch, or standing on an arrow: the merry-go-round is safe from Exdeath.
-    private bool Riding(SimCharacter player) =>
+    // In the air from a launch, or on an arrow mid-ride: the merry-go-round is safe from Exdeath.
+    private bool Riding(SimCharacter player) => !rideOver && OnTheRing(player);
+
+    private bool OnTheRing(SimCharacter player) =>
         launchCooldown > 0f
         || Enumerable.Range(0, ArrowCount).Any(i => Vector2.Distance(Flat(player.Position), Flat(RingPoint(i))) <= ArrowTriggerRadius);
 
