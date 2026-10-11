@@ -50,21 +50,18 @@ public class UmadPlaygroundScenarioTests
     }
 
     [Test]
-    public void StandingInAnArrowsPathLaunchesYou()
+    public void SteppingOnAnArrowLaunchesYou()
     {
-        // The ring turns at 0.35 rad/s from slot 0 due south; be where slot 0 passes at ~2.5s.
-        var angle = 0.35f * 2.5f;
-        var onTheRide = new Vector2(MathF.Sin(angle), MathF.Cos(angle)) * 13f;
         var bound = false;
         ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
         {
             PlayerRole = Me,
-            StopAt = 3.5f,
+            StopAt = 3f,
             WriteArtifactsOnFailure = false,
-            Takeovers = [new Takeover(1.5f, onTheRide)],
+            Takeovers = [new Takeover(1.5f, new Vector2(0f, 13f))],
             Probe = p => bound |= p.Member(Me)?.HasStatus(UmadConstants.StatusId.Bind) == true,
         });
-        Assert.That(bound, Is.True, "the arrow bound you for the launch");
+        Assert.That(bound, Is.True, "the arrow due south bound you for the launch");
     }
 
     [Test]
@@ -87,15 +84,11 @@ public class UmadPlaygroundScenarioTests
     }
 
     [Test]
-    public void EachArrowLaunchesYouOntoTheNextOneWhereItWillBe()
+    public void EachArrowLaunchesYouOntoTheNextOne()
     {
-        const float ring = 0.7f;
-        var from = UmadPlaygroundScenario.LandingFrom(7, ring - 0.35f * 0.8f);
-        var landing = UmadPlaygroundScenario.LandingFrom(0, ring);
-        Assert.That(landing.Length(), Is.EqualTo(13f).Within(1e-3f), "on the ring");
-        var nextAngle = ring + 0.35f * 0.8f + MathF.Tau / 8f;
-        Assert.That(Vector2.Distance(new(landing.X, landing.Z), new Vector2(MathF.Sin(nextAngle), MathF.Cos(nextAngle)) * 13f), Is.LessThan(1e-3f),
-            "on arrow 1, led by the ring's turn during the carry");
-        Assert.That(from.Length(), Is.EqualTo(13f).Within(1e-3f), "the last arrow sends you round to the first");
+        var east = UmadPlaygroundScenario.LandingFrom(1);
+        Assert.That(Vector2.Distance(new(east.X, east.Z), new(13f, 0f)), Is.LessThan(1e-3f), "arrow 1 (south-east) lands you on arrow 2 (east)");
+        var south = UmadPlaygroundScenario.LandingFrom(7);
+        Assert.That(Vector2.Distance(new(south.X, south.Z), new(0f, 13f)), Is.LessThan(1e-3f), "the last arrow sends you round to the first");
     }
 }

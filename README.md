@@ -29,7 +29,7 @@ Changes from AnoMech:
   aloud with the Windows voice. The sim never reaches ACT/IINACT, so cactbot itself can't call it.
 - Dancing Mad P3 Black Hole: **tether mistakes** are logged at each Nothingness (you weren't holding
   your tether, or held someone else's), in chat and on screen, and count against a clean run.
-- Dancing Mad **Playground: Merry-go-round** (Solo): P1's Tele-portent arrows ride a ring round
+- Dancing Mad **Playground: Merry-go-round** (Solo): P1's Tele-portent arrows stand in a ring round
   Chaos, each launching you onto the next so you can ride arrow to arrow; Exdeath walks you down (faster over time) and Chaos beams
   the spot you stood on a moment ago. It runs until you drop and reports how long you lasted
   against your best.

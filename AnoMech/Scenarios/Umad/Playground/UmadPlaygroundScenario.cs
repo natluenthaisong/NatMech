@@ -10,10 +10,10 @@ using static AnoMech.Scenarios.Umad.UmadConstants;
 
 namespace AnoMech.Scenarios.Umad.Playground;
 
-// Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows ride a merry-go-round
-// around Chaos, each pointing at the next and launching you onto it, so you can ride arrow to arrow;
-// Exdeath walks you down, faster as time goes on;
-// Chaos beams the spot you stood on a moment ago. It runs until you drop, then reports how long you
+// Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows stand in a ring around
+// Chaos, each pointing at the next and launching you onto it, so you can ride the merry-go-round arrow
+// to arrow; Exdeath walks you down, faster as time goes on; Chaos beams the spot you stood on a
+// moment ago. It runs until you drop, then reports how long you
 // lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
 {
@@ -23,13 +23,11 @@ public sealed class UmadPlaygroundScenario : IScenario
     public IReadOnlyList<IScenarioAi> AiStrats => [];
 
     private const int ArrowCount = 8;
-    private const float CarouselRadius = 13f;
-    private const float CarouselSpeed = 0.35f;      // radians a second, clockwise
+    private const float RingRadius = 13f;
     private const float ArrowsAt = 1f;
     private const float ArrowTriggerRadius = 2f;
     private const float ArrowTriggerDwell = 0.15f;
-    // The carry's length: the launch aims where the next arrow will be by then, and you can ride
-    // again as soon as you land.
+    // The carry's length; you can ride again as soon as you land.
     private const float LaunchBind = 0.8f;
 
     private const float ExdeathStart = 3f;
@@ -53,7 +51,6 @@ public sealed class UmadPlaygroundScenario : IScenario
     private readonly List<SimEventObject?> arrows = [];
     private readonly Dictionary<SimEventObject, float> arrowDwell = [];
     private readonly List<(float At, Vector3 Position)> trail = [];
-    private float carouselAngle;
     private float launchCooldown;
     private float catchCooldown;
     private int launches;
@@ -66,7 +63,6 @@ public sealed class UmadPlaygroundScenario : IScenario
         arrows.Clear();
         arrowDwell.Clear();
         trail.Clear();
-        carouselAngle = 0f;
         launchCooldown = 0f;
         catchCooldown = 0f;
         launches = 0;
@@ -84,7 +80,6 @@ public sealed class UmadPlaygroundScenario : IScenario
     public void Tick(float delta, float elapsed)
     {
         if (world.Party.Player is not { } player) return;
-        TurnCarousel(delta);
         if (over) return;
         if (!player.IsAlive())
         {
@@ -100,7 +95,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     {
         for (var i = 0; i < ArrowCount; i++)
         {
-            var placement = CarouselSlot(i);
+            var placement = RingSlot(i);
             arrows.Add(world.SpawnEventObject(new EventObjectSpawnConfig
             {
                 EObjId = EObjId.TelePortent,
@@ -112,24 +107,18 @@ public sealed class UmadPlaygroundScenario : IScenario
         }
     }
 
-    // Each arrow points at where it will land you: the next arrow round the ring, led by the turn.
-    private Placement CarouselSlot(int index)
+    // Clockwise from due south; each arrow points at the next, which is where it lands you.
+    private static Placement RingSlot(int index)
     {
-        var position = RingPoint(index, carouselAngle);
-        var toLanding = LandingFrom(index, carouselAngle) - position;
+        var position = RingPoint(index);
+        var toLanding = LandingFrom(index) - position;
         return new Placement(position, MathF.Atan2(toLanding.X, toLanding.Z));
     }
 
-    private static Vector3 RingPoint(int index, float ringAngle)
+    private static Vector3 RingPoint(int index)
     {
-        var angle = ringAngle + index * MathF.Tau / ArrowCount;
-        return new Vector3(MathF.Sin(angle), 0f, MathF.Cos(angle)) * CarouselRadius;
-    }
-
-    private void TurnCarousel(float delta)
-    {
-        carouselAngle = (carouselAngle + CarouselSpeed * delta) % MathF.Tau;
-        for (var i = 0; i < arrows.Count; i++) arrows[i]?.SetPosition(CarouselSlot(i));
+        var angle = index * MathF.Tau / ArrowCount;
+        return new Vector3(MathF.Sin(angle), 0f, MathF.Cos(angle)) * RingRadius;
     }
 
     private void TickArrows(SimCharacter player, float delta)
@@ -138,7 +127,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         for (var i = 0; i < arrows.Count; i++)
         {
             if (arrows[i] is not { } arrow) continue;
-            var slot = CarouselSlot(i);
+            var slot = RingSlot(i);
             if (Vector2.Distance(Flat(player.Position), Flat(slot.Position)) > ArrowTriggerRadius)
             {
                 arrowDwell.Remove(arrow);
@@ -156,15 +145,13 @@ public sealed class UmadPlaygroundScenario : IScenario
     private void Launch(SimCharacter player, Placement arrow, int index)
     {
         player.AddStatus(StatusId.Bind, LaunchBind);
-        (player as ISimPartyMember)?.CarryTo(LandingFrom(index, carouselAngle));
+        (player as ISimPartyMember)?.CarryTo(LandingFrom(index));
         world.SpawnOmen(VfxPath.TeleTrouncingArrowSpawnHit, new Placement(arrow.Position, 0f), Vector3.One, 2f);
         launchCooldown = LaunchBind;
         launches++;
     }
 
-    // On the next arrow, where the ring will have carried it by the time you come down.
-    internal static Vector3 LandingFrom(int index, float ringAngle) =>
-        RingPoint((index + 1) % ArrowCount, ringAngle + CarouselSpeed * LaunchBind);
+    internal static Vector3 LandingFrom(int index) => RingPoint((index + 1) % ArrowCount);
 
     private void TickExdeath(SimCharacter player, float delta, float elapsed)
     {
