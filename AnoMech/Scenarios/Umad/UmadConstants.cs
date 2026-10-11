@@ -303,6 +303,10 @@ public static class UmadConstants
         public const uint FireSpread      = 127;
         public const uint FireStack       = 128;
         public const uint Stack           = 161;
+        // TOP's Party Synergy symbols; Black Hole's guide beacon reuses them.
+        public const uint PlaystationCircle   = 416;
+        public const uint PlaystationTriangle = 417;
+        public const uint PlaystationSquare   = 418;
         // Limit Cut numbers 1-8.
         public static readonly uint[] LimitCutNumbers = [336, 337, 338, 339, 437, 438, 439, 440];
         public const uint FireFalse       = 673;

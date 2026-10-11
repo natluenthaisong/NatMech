@@ -20,8 +20,9 @@ Changes from AnoMech:
   Stomp-a-Mole towers, back to the stack) with a line to it, labelled Stack or Safe spot. On by
   default; toggle it under Scenario settings.
 - The Black Hole tether guide and safe/stack spot are drawn on the floor with the game's own pieces
-  by default, like a real marker: a friendly-coloured circle (optionally rainbow) for each spot and
-  Dancing Mad P1's glowing arrows pointing the way to it, no text. Untick "Draw them with the game's own floor markers" for the coloured, labelled overlay.
+  by default, like a real marker: a friendly-coloured circle (optionally rainbow) for each spot, a
+  PlayStation marker floating over it (circle safe spot, triangle stack, square tether hold spot)
+  and Dancing Mad P1's glowing arrows pointing the way to it, no text. Untick "Draw them with the game's own floor markers" for the coloured, labelled overlay.
 - Dancing Mad P3 Black Hole: **callouts** worded like cactbot's: your line number, Slap Happy,
   Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your
   tether jobs (Get North tether, Get both tethers, Pass tether). Shown on screen, optionally read

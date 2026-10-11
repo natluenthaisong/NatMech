@@ -165,7 +165,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         }
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("On: drawn on the floor with the game's own pieces, like a real marker: a friendly-coloured circle for each spot and Dancing Mad P1's glowing arrows pointing the way to it. No text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
+            ImGui.SetTooltip("On: drawn on the floor with the game's own pieces, like a real marker: a friendly-coloured circle for each spot, a PlayStation marker floating over it (circle = safe spot, triangle = stack, square = tether hold spot) and Dancing Mad P1's glowing arrows pointing the way to it. No text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
 
         var rainbow = Plugin.Config.BlackHoleRainbowMarkers;
         var brightness = Plugin.Config.BlackHoleMarkerBrightness;

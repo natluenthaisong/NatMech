@@ -56,6 +56,7 @@ internal static class UmadP3BlackHoleTetherGuide
         if (passing) shapes.Add(new GuideText(head, "Pass tether", GuideColour.Take));
         if (guide.HoldAt is not { } spot) return;
         shapes.Add(new GuideRing(spot, HoldSpotRadius, GuideColour.Spot));
+        shapes.Add(new GuideBeacon(spot, UmadConstants.LockonId.PlaystationSquare));
         if (Vector2.Distance(Flat(player.Position), Flat(spot)) <= HoldSpotRadius) return;
         shapes.Add(new GuideLine(player.Position, spot, GuideColour.Spot));
         if (!passing) shapes.Add(new GuideText(head, "Hold here", GuideColour.Spot));

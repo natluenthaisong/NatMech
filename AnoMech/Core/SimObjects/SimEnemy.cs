@@ -70,7 +70,9 @@ public record struct EnemySpawnConfig(
     byte[]? NpcSpawnTemplate = null,
     // Request the draw object ourselves. The engine builds none for a meshless actor, and a
     // caster without a draw object has its action timeline cleared within frames.
-    bool PacketSpawnEnableDraw = false);
+    bool PacketSpawnEnableDraw = false,
+    // A guide for this player alone: the multiplayer host doesn't broadcast it to peers.
+    bool LocalOnly = false);
 
 public sealed class SimEnemy : SimNpc
 {

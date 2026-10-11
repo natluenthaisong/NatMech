@@ -69,7 +69,7 @@ public sealed partial class MultiplayerManager
             }
         }
 
-        var liveEnemies = world.Children.OfType<SimEnemy>().Where(e => e.IsActive).ToList();
+        var liveEnemies = world.Children.OfType<SimEnemy>().Where(e => e.IsActive && !e.SpawnConfig.LocalOnly).ToList();
         foreach (var stale in hostEnemyNetIds.Keys.Where(e => !liveEnemies.Contains(e)).ToList())
         {
             DiagnosticLog.Debug($"[Multiplayer] Host: enemy NetId {hostEnemyNetIds[stale]} ({stale.BNpcBaseId}) no longer active -- dropping from broadcast.");

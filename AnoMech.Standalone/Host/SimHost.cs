@@ -37,7 +37,8 @@ internal sealed class SimHost
         DalamudServices.InstallNullServices();
         DalamudServices.Install(nameof(Plugin.ChatGui), CaptureService.Create<IChatGui>(AddLog));
         DalamudServices.Install(nameof(Plugin.ToastGui), CaptureService.Create<IToastGui>(_ => { }));
-        DalamudServices.Install(nameof(Plugin.Config), new Configuration());
+        // The app draws the guides itself; the floor markers are game objects it has no use for.
+        DalamudServices.Install(nameof(Plugin.Config), new Configuration { BlackHoleGameMarkers = false });
         DebugBotControl.Enabled = false;
         Game = new Game();
         DalamudServices.Install(nameof(Plugin.GameInstance), Game);

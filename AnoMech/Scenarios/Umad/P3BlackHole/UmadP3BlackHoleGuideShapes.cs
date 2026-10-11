@@ -18,6 +18,9 @@ public sealed record GuideRing(Vector3 Centre, float Radius, GuideColour Colour,
 public sealed record GuideLine(Vector3 From, Vector3 To, GuideColour Colour, bool Thick = false, bool OverlayOnly = false)
     : GuideShape(Colour, OverlayOnly);
 public sealed record GuideText(Vector3 At, string Text, GuideColour Colour) : GuideShape(Colour, OverlayOnly: true);
+// A head marker floating over a spot (Lockon sheet id), seen from anywhere in the arena. Floor only:
+// the overlay already labels the spot.
+public sealed record GuideBeacon(Vector3 At, uint LockonId) : GuideShape(GuideColour.Hint, OverlayOnly: false);
 
 // A guide line drawn as ">" marks sliding toward its end, like a racing game's turn guide, so which
 // way to go reads at a glance. Each mark is two arms, each from its back end to the mark's tip.
@@ -88,6 +91,7 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
 
     private readonly List<SimGroundMarker> rings = new();
     private readonly List<ArrowTrail> trails = new();
+    private readonly Beacon beacon = new(world);
     private int arrowsSpawned;
 
     // tint: multiplies the omens' own colours (see Rainbow); null keeps them as the game draws them.
@@ -95,6 +99,7 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
     {
         var colour = tint ?? Vector4.One;
         int ringCount = 0, lineCount = 0;
+        GuideBeacon? wantedBeacon = null;
         foreach (var shape in shapes)
         {
             if (shape.OverlayOnly) continue;
@@ -105,6 +110,9 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
                     ringMarker.Tint(colour);
                     ringMarker.Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
                     break;
+                case GuideBeacon b:
+                    wantedBeacon ??= b;
+                    break;
                 case GuideLine line:
                     if (lineCount == trails.Count) trails.Add(new ArrowTrail(this));
                     trails[lineCount++].Show(line.From, line.To);
@@ -113,12 +121,52 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
         }
         for (var i = ringCount; i < rings.Count; i++) rings[i].Hide();
         for (var i = lineCount; i < trails.Count; i++) trails[i].Clear();
+        beacon.Show(wantedBeacon);
     }
 
     public void Clear()
     {
         foreach (var marker in rings) marker.Hide();
         foreach (var trail in trails) trail.Clear();
+        beacon.Show(null);
+    }
+
+    // An invisible helper standing on the spot wears the head marker: head markers only attach to
+    // characters. A new symbol gets a new helper, since a second marker on one actor may not replace
+    // the first; a spot that moves just moves the helper, and the marker goes with it.
+    private sealed class Beacon(SimWorld world)
+    {
+        // The engine creates the actor a few frames after the spawn; a marker sent before that is lost.
+        private const int FramesBeforeMarker = 15;
+        private const float MoveTolerance = 0.3f;
+
+        private SimEnemy? helper;
+        private uint lockonId;
+        private int framesUntilMarker;
+
+        public void Show(GuideBeacon? wanted)
+        {
+            if (wanted is null) { Despawn(); return; }
+            if (helper is null || !helper.IsActive || wanted.LockonId != lockonId)
+            {
+                Despawn();
+                lockonId = wanted.LockonId;
+                helper = world.SpawnEnemy(new EnemySpawnConfig(
+                    BNpcBaseId: UmadConstants.BNpcBaseId.KefkaHelper, NameId: UmadConstants.BNpcNameId.Kefka, Level: 1,
+                    Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.InvisibleHelper,
+                    Placement: new Placement(wanted.At, 0f), LocalOnly: true));
+                framesUntilMarker = FramesBeforeMarker;
+                return;
+            }
+            if (Vector3.Distance(helper.Position, wanted.At) > MoveTolerance) helper.SetPosition(wanted.At);
+            if (framesUntilMarker > 0 && --framesUntilMarker == 0) helper.AttachLockonVfx(lockonId);
+        }
+
+        private void Despawn()
+        {
+            helper?.Despawn();
+            helper = null;
+        }
     }
 
     private SimEventObject? SpawnArrow(Vector3 at, float heading)

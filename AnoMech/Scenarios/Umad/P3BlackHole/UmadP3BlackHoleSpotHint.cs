@@ -41,6 +41,7 @@ public static class UmadP3BlackHoleSpotHint
     {
         if (world.Party.Player is not { } player || For(objects, world, player) is not { } hint) return;
         shapes.Add(new GuideRing(hint.Spot, SpotRadius, GuideColour.Hint));
+        shapes.Add(new GuideBeacon(hint.Spot, hint.Stack ? UmadConstants.LockonId.PlaystationTriangle : UmadConstants.LockonId.PlaystationCircle));
         shapes.Add(new GuideText(hint.Spot + new Vector3(0f, TextHeight, 0f), Label(hint), GuideColour.Hint));
         if (Vector2.Distance(Flat(player.Position), Flat(hint.Spot)) > SpotRadius)
             shapes.Add(new GuideLine(player.Position, hint.Spot, GuideColour.Hint));

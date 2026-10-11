@@ -124,4 +124,29 @@ public class UmadP3BlackHoleGroundGuideTests
         Assert.That(later[0].Tip.Z - now[0].Tip.Z, Is.EqualTo(GuideChevrons.Speed * 0.1f).Within(1e-4f), "the marks slide forward");
         Assert.That(now.Concat(later).Select(a => a.Tip.Z), Is.All.InRange(0f, 9f), "never past the target");
     }
+
+    private static List<SimEnemy> Beacons(SimWorld world) =>
+        world.Children.OfType<SimEnemy>().Where(e => e.IsActive && e.SpawnConfig.LocalOnly).ToList();
+
+    [Test]
+    public void ABeaconHelperWearsThePlaystationMarkerOverTheSpotAndFollowsIt()
+    {
+        var (world, _, guide) = Setup();
+        using var _ = world;
+        var circle = UmadConstants.LockonId.PlaystationCircle;
+        for (var frame = 0; frame < 20; frame++) guide.Show([new GuideBeacon(new Vector3(3f, 0f, 4f), circle)]);
+        var helper = Beacons(world).Single();
+        Assert.That(helper.Position, Is.EqualTo(new Vector3(3f, 0f, 4f)));
+        Assert.That(helper.DrainPendingLockonVfxIds(out var dropped), Is.EqualTo(new[] { circle }), "marked once the actor exists");
+
+        guide.Show([new GuideBeacon(new Vector3(-6f, 0f, 1f), circle)]);
+        Assert.That(Beacons(world).Single(), Is.SameAs(helper), "a moved spot moves the helper");
+        Assert.That(helper.Position, Is.EqualTo(new Vector3(-6f, 0f, 1f)));
+
+        guide.Show([new GuideBeacon(new Vector3(-6f, 0f, 1f), UmadConstants.LockonId.PlaystationTriangle)]);
+        Assert.That(Beacons(world).Single(), Is.Not.SameAs(helper), "a new symbol gets a fresh helper");
+
+        guide.Show([]);
+        Assert.That(Beacons(world), Is.Empty);
+    }
 }
