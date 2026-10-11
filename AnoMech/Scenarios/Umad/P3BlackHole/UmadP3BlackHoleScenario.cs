@@ -54,7 +54,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
             calloutBanner.ShowMistake(tetherMistakes[mistakesShown], speak);
         calloutBanner.Draw();
         if (!Plugin.Config.BlackHoleGameMarkers)
-            UmadP3BlackHoleGuideOverlay.Draw(GuideShapes(s), world);
+            UmadP3BlackHoleGuideOverlay.Draw(GuideShapes(s), world, guideClock.Elapsed.TotalSeconds);
     }
 
     private List<GuideShape> GuideShapes(UmadP3BlackHoleState s)
@@ -73,8 +73,8 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         if (groundGuide is null) return;
         if (Plugin.Config is { BlackHoleGameMarkers: true } && LastState is { } s
             && Plugin.MultiplayerInstance is not { IsConnected: true, IsHost: false })
-            groundGuide.Show(GuideShapes(s), Plugin.Config.BlackHoleRainbowMarkers
-                ? UmadP3BlackHoleGroundGuide.Rainbow(rainbowClock.Elapsed.TotalSeconds, Plugin.Config.BlackHoleMarkerBrightness)
+            groundGuide.Show(GuideShapes(s), guideClock.Elapsed.TotalSeconds, Plugin.Config.BlackHoleRainbowMarkers
+                ? UmadP3BlackHoleGroundGuide.Rainbow(guideClock.Elapsed.TotalSeconds, Plugin.Config.BlackHoleMarkerBrightness)
                 : null);
         else
             groundGuide.Clear();
@@ -95,8 +95,8 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
 
     private UmadP3BlackHoleState state = null!;
     private UmadP3BlackHoleGroundGuide? groundGuide;
-    // Real time, so the colours keep cycling while the fight is paused.
-    private readonly System.Diagnostics.Stopwatch rainbowClock = System.Diagnostics.Stopwatch.StartNew();
+    // Real time, so the guides keep animating while the fight is paused.
+    private readonly System.Diagnostics.Stopwatch guideClock = System.Diagnostics.Stopwatch.StartNew();
     private SimWorld world = null!;
     private SimParty party = null!;
     private List<Vector3>[] BlackHolePositions = null!;

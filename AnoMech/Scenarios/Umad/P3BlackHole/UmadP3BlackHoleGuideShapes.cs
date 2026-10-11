@@ -17,6 +17,35 @@ public sealed record GuideLine(Vector3 From, Vector3 To, GuideColour Colour, boo
     : GuideShape(Colour, OverlayOnly);
 public sealed record GuideText(Vector3 At, string Text, GuideColour Colour) : GuideShape(Colour, OverlayOnly: true);
 
+// A guide line drawn as ">" marks sliding toward its end, like a racing game's turn guide, so which
+// way to go reads at a glance. Each mark is two arms, each from its back end to the mark's tip.
+public static class GuideChevrons
+{
+    public const float Spacing = 1.5f;
+    public const float Speed = 3f;
+    public const float ArmLength = 0.45f;
+    private const int MaxCount = 16;
+
+    public static IEnumerable<(Vector3 Back, Vector3 Tip)> Arms(Vector3 from, Vector3 to, double seconds)
+    {
+        var along = new Vector3(to.X - from.X, 0f, to.Z - from.Z);
+        var length = along.Length();
+        if (length < ArmLength * 2f) yield break;
+        var forward = along / length;
+        var side = new Vector3(-forward.Z, 0f, forward.X) * ArmLength;
+        var count = 0;
+        for (var at = (float)(seconds * Speed % Spacing); at <= length && count < MaxCount; at += Spacing)
+        {
+            if (at < ArmLength) continue;
+            count++;
+            var tip = from + forward * at;
+            var back = tip - forward * ArmLength;
+            yield return (back + side, tip);
+            yield return (back - side, tip);
+        }
+    }
+}
+
 internal static class UmadP3BlackHoleGuideOverlay
 {
     // ImGui packs colours as 0xAABBGGRR.
@@ -28,7 +57,7 @@ internal static class UmadP3BlackHoleGuideOverlay
         _ => 0xFFFF60FF,
     };
 
-    public static void Draw(IEnumerable<GuideShape> shapes, SimWorld world)
+    public static void Draw(IEnumerable<GuideShape> shapes, SimWorld world, double seconds)
     {
         var overlay = new WorldOverlay(world.Coordinates);
         foreach (var shape in shapes)
@@ -36,7 +65,11 @@ internal static class UmadP3BlackHoleGuideOverlay
             switch (shape)
             {
                 case GuideRing ring: overlay.Circle(ring.Centre, ring.Radius, Packed(ring.Colour)); break;
-                case GuideLine line: overlay.Line(line.From, line.To, Packed(line.Colour), line.Thick ? 5f : 2f); break;
+                case GuideLine { Thick: true } beam: overlay.Line(beam.From, beam.To, Packed(beam.Colour), 5f); break;
+                case GuideLine line:
+                    foreach (var (back, tip) in GuideChevrons.Arms(line.From, line.To, seconds))
+                        overlay.Line(back, tip, Packed(line.Colour), 3f);
+                    break;
                 case GuideText text: overlay.Text(text.At, text.Text, Packed(text.Colour)); break;
             }
         }
@@ -50,7 +83,7 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
 {
     private const string CirclePath = "vfx/omen/eff/general_1bpf.avfx";
     private const string RectPath = "vfx/omen/eff/general02_pf.avfx";
-    private const float LineHalfWidth = 0.15f;
+    private const float ArmHalfWidth = 0.12f;
     private const float ThickLineHalfWidth = 0.3f;
     private const float ShortestLine = 0.3f;
 
@@ -58,7 +91,8 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
     private readonly List<SimGroundMarker> lines = new();
 
     // tint: multiplies the omens' own colours (see Rainbow); null keeps them as the game draws them.
-    public void Show(IEnumerable<GuideShape> shapes, Vector4? tint = null)
+    // seconds: drives the chevrons' slide.
+    public void Show(IEnumerable<GuideShape> shapes, double seconds, Vector4? tint = null)
     {
         var colour = tint ?? Vector4.One;
         int ringCount = 0, lineCount = 0;
@@ -72,19 +106,26 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
                     ringMarker.Tint(colour);
                     ringMarker.Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
                     break;
+                case GuideLine { Thick: true } beam:
+                    PlaceBar(Marker(lines, lineCount++, RectPath), beam.From, beam.To, ThickLineHalfWidth, colour);
+                    break;
                 case GuideLine line:
-                    var along = line.To - line.From;
-                    var length = new Vector2(along.X, along.Z).Length();
-                    if (length < ShortestLine) break;
-                    var halfWidth = line.Thick ? ThickLineHalfWidth : LineHalfWidth;
-                    var lineMarker = Marker(lines, lineCount++, RectPath);
-                    lineMarker.Tint(colour);
-                    lineMarker.Place(line.From, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
+                    foreach (var (back, tip) in GuideChevrons.Arms(line.From, line.To, seconds))
+                        PlaceBar(Marker(lines, lineCount++, RectPath), back, tip, ArmHalfWidth, colour);
                     break;
             }
         }
         for (var i = ringCount; i < rings.Count; i++) rings[i].Hide();
         for (var i = lineCount; i < lines.Count; i++) lines[i].Hide();
+    }
+
+    private static void PlaceBar(SimGroundMarker marker, Vector3 from, Vector3 to, float halfWidth, Vector4 colour)
+    {
+        var along = to - from;
+        var length = new Vector2(along.X, along.Z).Length();
+        if (length < ShortestLine) { marker.Hide(); return; }
+        marker.Tint(colour);
+        marker.Place(from, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
     }
 
     public void Clear()

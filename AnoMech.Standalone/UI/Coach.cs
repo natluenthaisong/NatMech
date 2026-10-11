@@ -31,6 +31,8 @@ internal sealed class Coach : IDisposable
     private readonly List<(string Text, Color Colour, double At)> calls = new();
     private readonly List<(AoeQuery Query, double At)> impacts = new();
     private readonly Font labelFont = new("Segoe UI", 9f, FontStyle.Bold);
+    // Real time, so the chevrons keep sliding while paused.
+    private readonly System.Diagnostics.Stopwatch animationClock = System.Diagnostics.Stopwatch.StartNew();
     private int mistakesShown;
 
     public Coach(SimHost host)
@@ -86,10 +88,13 @@ internal sealed class Coach : IDisposable
         ArenaView.DrawCentredText(g, UmadP3BlackHoleSpotHint.Label(hint), labelFont, HintColour,
             at with { Y = at.Y - arena.ToPixels(UmadP3BlackHoleSpotHint.SpotRadius) - 9 });
         if (Vector2.Distance(new(player.Position.X, player.Position.Z), new(hint.Spot.X, hint.Spot.Z)) > UmadP3BlackHoleSpotHint.SpotRadius)
-        {
-            pen.DashStyle = DashStyle.Dot;
-            g.DrawLine(pen, arena.ToScreen(player.Position), at);
-        }
+            DrawChevrons(g, arena, pen, player.Position, hint.Spot);
+    }
+
+    private void DrawChevrons(Graphics g, ArenaView arena, Pen pen, Vector3 from, Vector3 to)
+    {
+        foreach (var (back, tip) in GuideChevrons.Arms(from, to, animationClock.Elapsed.TotalSeconds))
+            g.DrawLine(pen, arena.ToScreen(back), arena.ToScreen(tip));
     }
 
     // Shown for the whole cast, as the game's omen would be.
@@ -140,7 +145,7 @@ internal sealed class Coach : IDisposable
         {
             using var pen = new Pen(SpotColour, 2.5f);
             arena.DrawCircle(g, pen, spot, 1.5f);
-            g.DrawLine(pen, arena.ToScreen(player.Position), arena.ToScreen(spot));
+            DrawChevrons(g, arena, pen, player.Position, spot);
         }
     }
 

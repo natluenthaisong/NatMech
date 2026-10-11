@@ -20,7 +20,7 @@ public class UmadP3BlackHoleGroundGuideTests
         using var world = new SimWorld(new EventScheduler());
         var vfx = (FakeVfxFunctions)Natives.Vfx;
         var guide = new UmadP3BlackHoleGroundGuide(world);
-        guide.Show([
+        guide.Show(seconds: 0, shapes: [
             new GuideRing(new Vector3(3f, 0f, 4f), 1.5f, GuideColour.Spot),
             new GuideRing(new Vector3(9f, 0f, 9f), 2f, GuideColour.Held, OverlayOnly: true),
             new GuideLine(Vector3.Zero, new Vector3(3f, 0f, 4f), GuideColour.Spot),
@@ -28,12 +28,23 @@ public class UmadP3BlackHoleGroundGuideTests
         ]);
 
         var live = Live(vfx);
-        Assert.That(live.Select(h => h.Path), Is.EquivalentTo(new[] { Circle, Rect }));
+        Assert.That(live.Count(h => h.Path == Circle), Is.EqualTo(1), "text and overlay-only shapes stay off the floor");
         var ring = live.Single(h => h.Path == Circle);
         Assert.That(ring.Scale, Is.EqualTo(new Vector3(1.5f, 1f, 1.5f)));
-        var line = live.Single(h => h.Path == Rect);
-        Assert.That(line.Scale.Z, Is.EqualTo(5f).Within(1e-4f), "the line reaches the spot");
-        Assert.That(line.Placement.Rotation, Is.EqualTo(MathF.Atan2(3f, 4f)).Within(1e-4f), "faces the spot");
+        var arms = live.Where(h => h.Path == Rect).ToList();
+        Assert.That(arms, Has.Count.EqualTo(6), "the 5y line becomes three > marks of two arms each");
+        Assert.That(arms.Select(a => a.Scale.Z), Is.All.EqualTo(GuideChevrons.ArmLength * MathF.Sqrt(2f)).Within(1e-4f));
+    }
+
+    [Test]
+    public void ChevronsPointAtTheTargetAndSlideTowardIt()
+    {
+        var to = new Vector3(0f, 0f, 9f);
+        var now = GuideChevrons.Arms(Vector3.Zero, to, 0.2).ToList();
+        var later = GuideChevrons.Arms(Vector3.Zero, to, 0.3).ToList();
+        Assert.That(now.Select(a => a.Tip.Z - a.Back.Z), Is.All.GreaterThan(0f), "every arm closes toward the target");
+        Assert.That(later[0].Tip.Z - now[0].Tip.Z, Is.EqualTo(GuideChevrons.Speed * 0.1f).Within(1e-4f), "the marks slide forward");
+        Assert.That(now.Concat(later).Select(a => a.Tip.Z), Is.All.InRange(0f, 9f), "never past the target");
     }
 
     [Test]
@@ -43,15 +54,17 @@ public class UmadP3BlackHoleGroundGuideTests
         using var world = new SimWorld(new EventScheduler());
         var vfx = (FakeVfxFunctions)Natives.Vfx;
         var guide = new UmadP3BlackHoleGroundGuide(world);
-        guide.Show([new GuideLine(Vector3.Zero, new Vector3(0f, 0f, 6f), GuideColour.Hint)]);
-        guide.Show([new GuideLine(new Vector3(1f, 0f, 0f), new Vector3(0f, 0f, 6f), GuideColour.Hint)]);
-        Assert.That(vfx.Static, Has.Count.EqualTo(1), "moved, not respawned");
-        Assert.That(vfx.Static[0].Moves, Is.EqualTo(1));
+        GuideShape[] line = [new GuideLine(Vector3.Zero, new Vector3(0f, 0f, 6f), GuideColour.Hint)];
+        guide.Show(line, seconds: 0);
+        var spawned = vfx.Static.Count;
+        guide.Show(line, seconds: 0.2);
+        Assert.That(vfx.Static, Has.Count.EqualTo(spawned), "the marks slide by moving, not respawning");
+        Assert.That(vfx.Static.Select(h => h.Moves), Is.All.EqualTo(1));
 
-        guide.Show([]);
+        guide.Show([], seconds: 0.2);
         Assert.That(Live(vfx), Is.Empty);
-        guide.Show([new GuideLine(Vector3.Zero, new Vector3(0f, 0f, 6f), GuideColour.Hint)]);
-        Assert.That(Live(vfx), Has.Count.EqualTo(1), "shown again once there is something to show");
+        guide.Show(line, seconds: 0.2);
+        Assert.That(Live(vfx), Has.Count.EqualTo(spawned), "shown again once there is something to show");
         world.Despawn();
         Assert.That(Live(vfx), Is.Empty, "a world reset clears the floor");
     }
@@ -68,12 +81,12 @@ public class UmadP3BlackHoleGroundGuideTests
             new GuideLine(Vector3.Zero, new Vector3(3f, 0f, 4f), GuideColour.Hint),
         ];
         var red = UmadP3BlackHoleGroundGuide.Rainbow(0, brightness: 2f);
-        guide.Show(shapes, red);
+        guide.Show(shapes, 0, red);
         Assert.That(vfx.Static.Select(h => h.Color), Is.All.EqualTo(red));
         Assert.That(red.X, Is.GreaterThan(red.Y).And.GreaterThan(red.Z), "starts red");
 
         var later = UmadP3BlackHoleGroundGuide.Rainbow(2.0 / 3.0, brightness: 2f);
-        guide.Show(shapes, later);
+        guide.Show(shapes, 0, later);
         Assert.That(vfx.Static.Select(h => h.Color), Is.All.EqualTo(later));
         Assert.That(later.Y, Is.GreaterThan(later.X), "a third of the way round it has turned green");
         Assert.That(new[] { later.X, later.Y, later.Z }, Is.All.GreaterThan(0f), "never blacks out a channel");
