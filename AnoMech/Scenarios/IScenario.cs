@@ -26,6 +26,10 @@ public interface IScenario
     // The strat the menu picks when this scenario is selected.
     int DefaultAi => 0;
 
+    // A toy that runs until the player drops: there is nothing to clear, so its strats aren't held
+    // to clearing it (ScenarioCatalogTests).
+    bool Endless => false;
+
     // How far into the phase's track the real fight is when this scenario starts.
     float BgmSecondsAtStart => 0f;
 

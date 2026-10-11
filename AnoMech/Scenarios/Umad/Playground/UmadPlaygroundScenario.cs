@@ -21,7 +21,8 @@ public sealed class UmadPlaygroundScenario : IScenario
     public string Name => "Playground: Merry-go-round";
     public IPhase Phase => UmadZone.P3;
     public bool SupportsSolo => true;
-    public IReadOnlyList<IScenarioAi> AiStrats => [];
+    public bool Endless => true;
+    public IReadOnlyList<IScenarioAi> AiStrats => [new UmadPlaygroundAi()];
 
     private const int ArrowCount = 8;
     private const float RingRadius = 13f;
@@ -51,6 +52,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     // How far behind you the beam aims: where you stood this long ago.
     private const float BeamLag = 0.6f;
     private const float BeamWarning = 0.5f;
+    private const float BeamDamageDelay = 0.5f;
     private const string BeamOmenPath = "vfx/omen/eff/general02f.avfx";
     private static readonly Vector3 BeamOmenScale = new(3f, 1f, 40f);
 
@@ -102,6 +104,7 @@ public sealed class UmadPlaygroundScenario : IScenario
             Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.InvisibleHelper, Placement: new Placement(Vector3.Zero, 0f))));
         world.Events.Add(ArrowsAt, SpawnArrows);
         world.Events.Add(ChaosStart, FireBeam);
+        if (selectedAi is { } strat) ((IScenarioAi<SimParty>)AiStrats[strat]).Run(world.Party, world);
     }
 
     public void Tick(float delta, float elapsed)
@@ -258,9 +261,21 @@ public sealed class UmadPlaygroundScenario : IScenario
         world.Events.Add(BeamWarning, () =>
         {
             if (over || chaos is null) return;
-            if (chaos.Cast(UmadActions.PlaygroundBeam, chaos.Position + along) is { } shot && shot.Kills.Count == 0) beamsDodged++;
+            var source = new Placement(chaos.Position, rotation);
+            chaos.Cast(ActionId.WaveCannon, chaos.Position + along, animationLock: 1.1f);
+            world.Events.Add(BeamDamageDelay, () => HitWithBeam(source));
         });
         world.Events.Add(BeamInterval, FireBeam);
+    }
+
+    // Checked against you alone: any party member's death pauses the sim, and the train is just for show.
+    private void HitWithBeam(Placement source)
+    {
+        if (over || world.Party.Player is not { } player || !player.IsAlive()) return;
+        if (new AoeQuery(ActionId.WaveCannon, source).SignedDistance(player.Position) is < 0f)
+            player.Die(ActionId.WaveCannon, "Chaos's beam caught up with you");
+        else
+            beamsDodged++;
     }
 
     private void RecordTrail(SimCharacter player, float elapsed)

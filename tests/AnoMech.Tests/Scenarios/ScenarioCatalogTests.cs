@@ -7,6 +7,7 @@ public class ScenarioCatalogTests
 {
     private static IEnumerable<TestCaseData> ScenarioStrats()
         => from scenario in ScenarioCatalog.Create()
+           where !scenario.Endless
            from strat in scenario.AiStrats.Select((ai, index) => (ai, index))
            select new TestCaseData(scenario.GetType(), strat.index)
                .SetName($"{Game.FullName(scenario)} [{strat.ai.Name}]");

@@ -144,4 +144,29 @@ public class UmadPlaygroundScenarioTests
         Assert.That(exdeathConfused, Is.True);
         Assert.That(fightBacks, Is.EqualTo(1), "Chaos answers the second Thunder III");
     }
+
+    [Test]
+    public void ThePartyFollowsYouAsATrain()
+    {
+        var gaps = new List<float>();
+        var run = ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
+        {
+            PlayerRole = Me,
+            StopAt = 8f,
+            WriteArtifactsOnFailure = false,
+            Takeovers = [new Takeover(0.5f, new Vector2(0f, 8f))],
+            Probe = p =>
+            {
+                p.Game.GodMode = true;
+                if (!p.Crossed(7.5f)) return;
+                var line = Enumerable.Range(0, 8).Select(seat => p.World.Party.Get(seat)).OfType<SimCharacter>()
+                    .OrderBy(m => ReferenceEquals(m, p.World.Party.Player) ? -1 : 0).ToList();
+                for (var k = 1; k < line.Count; k++)
+                    gaps.Add(Vector2.Distance(new(line[k].Position.X, line[k].Position.Z), new(line[k - 1].Position.X, line[k - 1].Position.Z)));
+            },
+        });
+        Assert.That(gaps, Has.Count.EqualTo(7));
+        Assert.That(gaps, Is.All.LessThan(3f), "each car right behind the one ahead");
+        Assert.That(run.Deaths, Is.Empty, "beams and Exdeath leave the train alone (god mode keeps you up)");
+    }
 }

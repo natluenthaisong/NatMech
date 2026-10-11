@@ -261,18 +261,6 @@ public static class UmadActions
         Timing = new() { DamageDelay = 0.5f },
     };
 
-    // -- Playground --
-
-    // Chaos's beam in the Merry-go-round: Wave Cannon's 6-wide line, and it kills. Not Nothingness:
-    // that beam is the black hole's own animation, which Chaos's model can't play.
-    public static readonly EnemyAction PlaygroundBeam = new(UmadConstants.ActionId.WaveCannon)
-    {
-        Cast = new() { AnimationLock = 1.1f },
-        Effects = [Damage(Lethal)],
-        Timing = new() { DamageDelay = 0.5f },
-        DeathExplanation = "Chaos's beam caught up with you",
-    };
-
     // -- P3 Limit Cut --
 
     // Kefka's second trance beat: instant, although the sheet gives it a 3s cast.
