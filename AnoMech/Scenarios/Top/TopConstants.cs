@@ -106,6 +106,7 @@ public static class TopConstants
 
         // -- Sword/shield/leg/staff body forms --
         public const uint BeyondStrength = 31525;
+        public const uint SyntheticShield = 32369;                  // self, cast 1.0s: Omega-M raises the shield
         public const uint EfficientBladework = 31526;
         public const uint BeyondDefense = 31527;
         public const uint BeyondDefenseAOE = 31528;                 // OmegaMHelper->player, no cast, range 5 circle

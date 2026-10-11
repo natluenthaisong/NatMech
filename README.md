@@ -36,7 +36,8 @@ Changes from AnoMech:
   - Exdeath walks you down, faster over time, but can't catch you while you ride.
   - Chaos beams the spot you stood on a moment ago.
   - Ride a full lap and Exdeath gets Confused and Thunder IIIs Chaos, who Damning Edicts him back.
-  - From 15s Omega-M walks in and stands between you and Chaos, shield up, blocking beams.
+  - From 15s Omega-M walks in and stands between you and Chaos, raising Synthetic Shield to block
+    every beam that reaches him first.
   - Conga train: the rest of your party follows you nose to tail.
 - **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
   Outside multiplayer only.

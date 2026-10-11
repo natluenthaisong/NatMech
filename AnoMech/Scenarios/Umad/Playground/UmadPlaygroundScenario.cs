@@ -87,6 +87,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     internal int ConfusedExdeaths { get; private set; }
     internal int FightBacks { get; private set; }
     internal int ShieldBlocks { get; private set; }
+    internal int ShieldsRaised { get; private set; }
     // Beams that reached you, killing you or, in god mode, would have.
     internal int BeamHits { get; private set; }
     private int beamsDodged;
@@ -105,6 +106,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         ConfusedExdeaths = 0;
         FightBacks = 0;
         ShieldBlocks = 0;
+        ShieldsRaised = 0;
         BeamHits = 0;
         omega = null;
         lapLaunches = 0;
@@ -124,6 +126,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         world.Events.Add(OmegaArrives, () => omega = world.SpawnEnemy(new EnemySpawnConfig(
             InitialModeAttributeFlags: OmegaShieldOnly, BNpcBaseId: Top.TopConstants.BNpcBaseId.OmegaMClone, NameId: Top.TopConstants.BNpcNameId.OmegaM,
             Level: 90, Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.Visible, Placement: new Placement(OmegaEntrance, MathF.PI / 2f))));
+        world.Events.Add(OmegaArrives + 1f, RaiseShield);
         world.Events.Add(ChaosStart, FireBeam);
         if (selectedAi is { } strat) ((IScenarioAi<SimParty>)AiStrats[strat]).Run(world.Party, world);
     }
@@ -146,7 +149,7 @@ public sealed class UmadPlaygroundScenario : IScenario
 
     private void TickOmega(SimCharacter player)
     {
-        if (omega is null || chaos is null) return;
+        if (omega is null || chaos is null || omega.IsCasting) return;
         var guard = GuardSpot(player);
         if (Vector2.Distance(Flat(omega.Position), Flat(guard)) > GuardTolerance) omega.MoveTo(guard, OmegaSpeed);
         var toChaos = chaos.Position - omega.Position;
@@ -296,6 +299,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         var rotation = MathF.Atan2(along.X, along.Z);
         chaos.SetPosition(new Placement(chaos.Position, rotation));
         world.SpawnOmen(BeamOmenPath, new Placement(chaos.Position, rotation), BeamOmenScale, BeamWarning);
+        if (OmegaInTheWay(new Placement(chaos.Position, rotation), player)) RaiseShield();
         world.Events.Add(BeamWarning, () =>
         {
             if (over || chaos is null) return;
@@ -316,14 +320,27 @@ public sealed class UmadPlaygroundScenario : IScenario
             beamsDodged++;
             return;
         }
-        if (omega is not null && beam.SignedDistance(omega.Position) is < 0f
-            && Vector3.Distance(source.Position, omega.Position) < Vector3.Distance(source.Position, player.Position))
+        if (OmegaInTheWay(source, player))
         {
             ShieldBlocks++;
             return;
         }
         BeamHits++;
         player.Die(ActionId.WaveCannon, "Chaos's beam caught up with you");
+    }
+
+    private bool OmegaInTheWay(Placement beamSource, SimCharacter player) =>
+        omega is not null
+        && new AoeQuery(ActionId.WaveCannon, beamSource).SignedDistance(omega.Position) is < 0f
+        && Vector3.Distance(beamSource.Position, omega.Position) < Vector3.Distance(beamSource.Position, player.Position);
+
+    // Synthetic Shield's 1s bar spans the beam's warning and hit, so the shield is up as it lands.
+    private void RaiseShield()
+    {
+        if (omega is null || omega.IsCasting) return;
+        omega.StopMoving();
+        omega.Cast(Top.TopConstants.ActionId.SyntheticShield, animationLock: 0.6f);
+        ShieldsRaised++;
     }
 
     private void RecordTrail(SimCharacter player, float elapsed)

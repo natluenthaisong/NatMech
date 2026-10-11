@@ -174,6 +174,7 @@ public class UmadPlaygroundScenarioTests
     public void OmegaMArrivesAndShieldsYouFromTheBeams()
     {
         var blocks = 0;
+        var raised = 0;
         var hitsWhileGuarded = -1;
         var hitsAt20 = 0;
         ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
@@ -187,11 +188,13 @@ public class UmadPlaygroundScenarioTests
                 p.Game.GodMode = true;
                 var playground = (UmadPlaygroundScenario)p.Game.ActiveScenario!;
                 blocks = playground.ShieldBlocks;
+                raised = playground.ShieldsRaised;
                 if (p.Crossed(20f)) hitsAt20 = playground.BeamHits;
                 hitsWhileGuarded = playground.BeamHits - hitsAt20;
             },
         });
         Assert.That(blocks, Is.Positive);
+        Assert.That(raised, Is.GreaterThanOrEqualTo(blocks), "a Synthetic Shield for every block, and one on arrival");
         Assert.That(hitsWhileGuarded, Is.Zero, "standing still behind Omega-M, every beam is his");
     }
 }
