@@ -143,7 +143,8 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
         // that is lost.
         private const int FramesBeforeMarker = 15;
         private const float MoveTolerance = 0.3f;
-        // Within this of the spot, Closer turns into its "close enough" version.
+        // Within this of the spot the tether goes: the circle and the marker say enough there, and
+        // Closer's own close-enough version only adds a tick at each end.
         private const float ArrivedRadius = UmadP3BlackHoleSpotHint.SpotRadius + 0.5f;
 
         private SimEnemy? helper;
@@ -174,10 +175,9 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
         private void ShowTether(SimEnemy spot, ushort id, bool reversed)
         {
             var player = world.Party.Player;
-            if (player is null || !player.IsAlive()) id = 0;
-            else if (id == UmadConstants.TetherId.Closer
-                     && Vector2.Distance(new(player.Position.X, player.Position.Z), new(spot.Position.X, spot.Position.Z)) <= ArrivedRadius)
-                id = UmadConstants.TetherId.CloserClear;
+            if (player is null || !player.IsAlive()
+                || Vector2.Distance(new(player.Position.X, player.Position.Z), new(spot.Position.X, spot.Position.Z)) <= ArrivedRadius)
+                id = 0;
             if (tether is { IsActive: true } && tetherShown == (id, reversed)) return;
             ClearTether();
             if (id == 0) return;

@@ -197,7 +197,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
             Plugin.Config.Save();
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("A game tether from you to the marker over your spot. Closer switches to its close-enough look once you're there.");
+            ImGui.SetTooltip("A game tether from you to the marker over your spot, gone once you're there.");
         ImGui.SameLine();
         var reversed = Plugin.Config.BlackHoleSpotTetherReversed;
         if (ImGui.Checkbox("Reverse", ref reversed))

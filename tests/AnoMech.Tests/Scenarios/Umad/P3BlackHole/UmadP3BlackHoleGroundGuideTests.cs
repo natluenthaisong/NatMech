@@ -155,7 +155,7 @@ public class UmadP3BlackHoleGroundGuideTests
         world.Children.OfType<SimTether>().Where(t => t.IsActive).ToList();
 
     [Test]
-    public void TheSpotTetherRunsFromTheBeaconToYouAndTurnsClearOnArrival()
+    public void TheSpotTetherRunsFromTheBeaconToYouAndGoesOnArrival()
     {
         var (world, _, guide) = Setup();
         using var _ = world;
@@ -174,13 +174,16 @@ public class UmadP3BlackHoleGroundGuideTests
         guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer, reverseTether: true);
         Assert.That(Tethers(world).Single().A, Is.SameAs(player), "reversed");
 
-        player.SetPosition(far);
-        guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer);
-        Assert.That(Tethers(world).Single().TetherId, Is.EqualTo(UmadConstants.TetherId.CloserClear), "arrived");
-
         guide.Show(beacon, spotTether: 0);
         Assert.That(Tethers(world), Is.Empty, "None turns it off");
+
+        var start = player.Position;
+        player.SetPosition(far);
+        guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer);
+        Assert.That(Tethers(world), Is.Empty, "arrived: the circle and marker are enough");
+        player.SetPosition(start);
         guide.Show(beacon, spotTether: UmadConstants.TetherId.Arrow1);
+        Assert.That(Tethers(world), Has.Count.EqualTo(1), "back again once you leave");
         guide.Show([], spotTether: UmadConstants.TetherId.Arrow1);
         Assert.That(Tethers(world), Is.Empty, "goes with the beacon");
     }
