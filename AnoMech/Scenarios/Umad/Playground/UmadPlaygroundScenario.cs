@@ -15,8 +15,9 @@ namespace AnoMech.Scenarios.Umad.Playground;
 // to arrow, out of Exdeath's reach while you ride. Exdeath walks you down, faster as time goes on;
 // Chaos beams the spot you stood on a moment ago. Ride a whole lap and Exdeath gets Confused and
 // Thunder IIIs Chaos instead, and after the second hit Chaos Damning Edicts him back, just for the
-// meme. Then Omega-M walks in from The Omega Protocol and plants himself between you and Chaos, shield
-// up, eating any beam that reaches him first. It runs until you drop, then reports how long you
+// meme. Then Omega-M leaps in from The Omega Protocol and covers you like a paladin: Beyond Defense
+// with the shield up between you and Chaos, eating any beam that reaches him first, then a leap to
+// wherever covers you now. It runs until you drop, then reports how long you
 // lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
 {
@@ -53,8 +54,11 @@ public sealed class UmadPlaygroundScenario : IScenario
     private static readonly Vector3 OmegaEntrance = new(-19f, 0f, 0f);
     // How far in front of you, toward Chaos, he stands.
     private const float GuardDistance = 2.5f;
-    private const float OmegaSpeed = 9f;
-    private const float GuardTolerance = 0.5f;
+    private const float OmegaLeapsIn = 0.5f;
+    // Beyond Defense's own 4.9s bar, then the leap: the jump's lock, and the landing a beat into it.
+    private const float BeyondDefenseSeconds = 4.9f;
+    private const float LeapLands = 0.3f;
+    private const float LeapSeconds = 1.2f;
     // TOP's Omega-M clone with only the shield out (P2 Party Synergy's Shield combo).
     private const byte OmegaShieldOnly = 0;
 
@@ -126,7 +130,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         world.Events.Add(OmegaArrives, () => omega = world.SpawnEnemy(new EnemySpawnConfig(
             InitialModeAttributeFlags: OmegaShieldOnly, BNpcBaseId: Top.TopConstants.BNpcBaseId.OmegaMClone, NameId: Top.TopConstants.BNpcNameId.OmegaM,
             Level: 90, Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.Visible, Placement: new Placement(OmegaEntrance, MathF.PI / 2f))));
-        world.Events.Add(OmegaArrives + 1f, RaiseShield);
+        world.Events.Add(OmegaArrives + OmegaLeapsIn, LeapToCoverYou);
         world.Events.Add(ChaosStart, FireBeam);
         if (selectedAi is { } strat) ((IScenarioAi<SimParty>)AiStrats[strat]).Run(world.Party, world);
     }
@@ -144,16 +148,25 @@ public sealed class UmadPlaygroundScenario : IScenario
         if (!Riding(player)) lapLaunches = 0;
         TickArrows(player, delta);
         TickExdeath(player, delta, elapsed);
-        TickOmega(player);
     }
 
-    private void TickOmega(SimCharacter player)
+    // Omega-M's whole routine, a chain of events: leap in front of you, hold Beyond Defense, leap again.
+    private void LeapToCoverYou()
     {
-        if (omega is null || chaos is null || omega.IsCasting) return;
+        if (over || omega is null || chaos is null || world.Party.Player is not { } player) return;
         var guard = GuardSpot(player);
-        if (Vector2.Distance(Flat(omega.Position), Flat(guard)) > GuardTolerance) omega.MoveTo(guard, OmegaSpeed);
-        var toChaos = chaos.Position - omega.Position;
-        if (omega.MoveDestination is null) omega.SetPosition(new Placement(omega.Position, MathF.Atan2(toChaos.X, toChaos.Z)));
+        var toChaos = chaos.Position - guard;
+        omega.Cast(Top.TopConstants.ActionId.BeyondDefenseAOE, guard, animationLock: LeapSeconds);
+        world.Events.Add(LeapLands, () => omega?.SetPosition(new Placement(guard, MathF.Atan2(toChaos.X, toChaos.Z))));
+        world.Events.Add(LeapSeconds, HoldBeyondDefense);
+    }
+
+    private void HoldBeyondDefense()
+    {
+        if (over || omega is null) return;
+        omega.Cast(Top.TopConstants.ActionId.BeyondDefense, animationLock: 0.6f);
+        ShieldsRaised++;
+        world.Events.Add(BeyondDefenseSeconds, LeapToCoverYou);
     }
 
     private Vector3 GuardSpot(SimCharacter player)
@@ -299,7 +312,6 @@ public sealed class UmadPlaygroundScenario : IScenario
         var rotation = MathF.Atan2(along.X, along.Z);
         chaos.SetPosition(new Placement(chaos.Position, rotation));
         world.SpawnOmen(BeamOmenPath, new Placement(chaos.Position, rotation), BeamOmenScale, BeamWarning);
-        if (OmegaInTheWay(new Placement(chaos.Position, rotation), player)) RaiseShield();
         world.Events.Add(BeamWarning, () =>
         {
             if (over || chaos is null) return;
@@ -333,15 +345,6 @@ public sealed class UmadPlaygroundScenario : IScenario
         omega is not null
         && new AoeQuery(ActionId.WaveCannon, beamSource).SignedDistance(omega.Position) is < 0f
         && Vector3.Distance(beamSource.Position, omega.Position) < Vector3.Distance(beamSource.Position, player.Position);
-
-    // Synthetic Shield's 1s bar spans the beam's warning and hit, so the shield is up as it lands.
-    private void RaiseShield()
-    {
-        if (omega is null || omega.IsCasting) return;
-        omega.StopMoving();
-        omega.Cast(Top.TopConstants.ActionId.SyntheticShield, animationLock: 0.6f);
-        ShieldsRaised++;
-    }
 
     private void RecordTrail(SimCharacter player, float elapsed)
     {

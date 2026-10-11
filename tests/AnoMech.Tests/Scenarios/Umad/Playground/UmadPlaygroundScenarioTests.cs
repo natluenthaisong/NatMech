@@ -194,7 +194,7 @@ public class UmadPlaygroundScenarioTests
             },
         });
         Assert.That(blocks, Is.Positive);
-        Assert.That(raised, Is.GreaterThanOrEqualTo(blocks), "a Synthetic Shield for every block, and one on arrival");
+        Assert.That(raised, Is.InRange(3, 5), "Beyond Defense held again after each leap, about every 6s from 15s");
         Assert.That(hitsWhileGuarded, Is.Zero, "standing still behind Omega-M, every beam is his");
     }
 }
