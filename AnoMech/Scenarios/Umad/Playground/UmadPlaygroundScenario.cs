@@ -13,7 +13,8 @@ namespace AnoMech.Scenarios.Umad.Playground;
 // Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows stand in a ring around
 // Chaos, each pointing at the next and launching you onto it, so you can ride the merry-go-round arrow
 // to arrow, out of Exdeath's reach while you ride; Exdeath walks you down, faster as time goes on; Chaos beams the spot you stood on a
-// moment ago. It runs until you drop, then reports how long you
+// moment ago. Ride a whole lap and Exdeath gets Confused and Thunder IIIs Chaos instead, just for the
+// meme. It runs until you drop, then reports how long you
 // lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
 {
@@ -37,6 +38,12 @@ public sealed class UmadPlaygroundScenario : IScenario
     private const float CatchMargin = 0.4f;
     private const float CatchCooldown = 2f;
 
+    // A full lap of launches without stepping off.
+    private const float ConfusedSeconds = 12f;
+    private const float ThunderCastAt = 0.5f;
+    private const float ThunderHitsAt = 5.5f;   // ThunderIII_Cast's 5s bar, then two hits 3s apart
+    private const float ThunderSecondHit = 3f;
+
     private const float ChaosStart = 5f;
     private const float BeamInterval = 1.5f;
     // How far behind you the beam aims: where you stood this long ago.
@@ -48,6 +55,9 @@ public sealed class UmadPlaygroundScenario : IScenario
     private SimWorld world = null!;
     private SimEnemy? chaos;
     private SimEnemy? exdeath;
+    private SimEnemy? thunderHelper;
+    private int lapLaunches;
+    private float confusedFor;
     private readonly List<SimEventObject?> arrows = [];
     private readonly Dictionary<SimEventObject, float> arrowDwell = [];
     private readonly List<(float At, Vector3 Position)> trail = [];
@@ -56,6 +66,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     private int launches;
     // Caught by Exdeath, or would have been in god mode.
     internal int Catches { get; private set; }
+    internal int ConfusedExdeaths { get; private set; }
     private int beamsDodged;
     private bool over;
 
@@ -69,6 +80,9 @@ public sealed class UmadPlaygroundScenario : IScenario
         catchCooldown = 0f;
         launches = 0;
         Catches = 0;
+        ConfusedExdeaths = 0;
+        lapLaunches = 0;
+        confusedFor = 0f;
         beamsDodged = 0;
         over = false;
 
@@ -76,6 +90,8 @@ public sealed class UmadPlaygroundScenario : IScenario
             Targetable: false, EnemyList: EnemyListMode.Always, Visibility: SpawnVisibility.Visible, Placement: new Placement(Vector3.Zero, 0f))));
         world.Events.Add(0f, () => exdeath = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.Exdeath, NameId: BNpcNameId.Exdeath, Level: 100,
             Targetable: false, EnemyList: EnemyListMode.Always, Visibility: SpawnVisibility.Visible, Placement: new Placement(new Vector3(0f, 0f, -16f), 0f))));
+        world.Events.Add(0f, () => thunderHelper = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.KefkaHelper, NameId: BNpcNameId.Exdeath, Level: 1,
+            Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.InvisibleHelper, Placement: new Placement(Vector3.Zero, 0f))));
         world.Events.Add(ArrowsAt, SpawnArrows);
         world.Events.Add(ChaosStart, FireBeam);
     }
@@ -90,6 +106,7 @@ public sealed class UmadPlaygroundScenario : IScenario
             return;
         }
         RecordTrail(player, elapsed);
+        if (!Riding(player)) lapLaunches = 0;
         TickArrows(player, delta);
         TickExdeath(player, delta, elapsed);
     }
@@ -152,6 +169,9 @@ public sealed class UmadPlaygroundScenario : IScenario
         world.SpawnOmen(VfxPath.TeleTrouncingArrowSpawnHit, new Placement(arrow.Position, 0f), Vector3.One, 2f);
         launchCooldown = LaunchBind;
         launches++;
+        if (++lapLaunches < ArrowCount) return;
+        lapLaunches = 0;
+        ConfuseExdeath();
     }
 
     internal static Vector3 LandingFrom(int index) => RingPoint((index + 1) % ArrowCount);
@@ -160,6 +180,12 @@ public sealed class UmadPlaygroundScenario : IScenario
     {
         if (exdeath is null || elapsed < ExdeathStart) return;
         var speed = MathF.Min(ExdeathTopSpeed, ExdeathStartSpeed + (elapsed - ExdeathStart) * ExdeathSpeedUpPerSecond);
+        if (confusedFor > 0f)
+        {
+            confusedFor -= delta;
+            exdeath.Follow(chaos, speed);
+            return;
+        }
         exdeath.Follow(player, speed);
         if (catchCooldown > 0f) { catchCooldown -= delta; return; }
         if (Riding(player)) return;
@@ -168,6 +194,25 @@ public sealed class UmadPlaygroundScenario : IScenario
         catchCooldown = CatchCooldown;
         Catches++;
         player.Die(ActionId.DeathBomb, "Exdeath caught you");
+    }
+
+    // Purely for show: Chaos takes nothing, but the bar and both hits go up as in the fight.
+    private void ConfuseExdeath()
+    {
+        if (exdeath is null || chaos is null || confusedFor > 0f) return;
+        confusedFor = ConfusedSeconds;
+        ConfusedExdeaths++;
+        exdeath.AddStatus(StatusId.Confused, ConfusedSeconds);
+        world.Events.Add(ThunderCastAt, () => exdeath?.Cast(ActionId.ThunderIII_Cast, chaos, animationLock: 3.1f));
+        world.Events.Add(ThunderHitsAt, ThunderChaos);
+        world.Events.Add(ThunderHitsAt + ThunderSecondHit, ThunderChaos);
+    }
+
+    private void ThunderChaos()
+    {
+        if (over || chaos is null) return;
+        thunderHelper?.SetPosition(chaos.Position);
+        thunderHelper?.Cast(ActionId.ThunderIII_Resolve, chaos);
     }
 
     // In the air from a launch, or standing on an arrow: the merry-go-round is safe from Exdeath.
