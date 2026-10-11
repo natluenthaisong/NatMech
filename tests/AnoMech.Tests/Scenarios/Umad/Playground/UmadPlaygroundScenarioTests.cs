@@ -85,4 +85,17 @@ public class UmadPlaygroundScenarioTests
         });
         Assert.That(stillRunning, Is.True, "no timeline end: the run lasts as long as you do");
     }
+
+    [Test]
+    public void EachArrowLaunchesYouOntoTheNextOneWhereItWillBe()
+    {
+        const float ring = 0.7f;
+        var from = UmadPlaygroundScenario.LandingFrom(7, ring - 0.35f * 0.8f);
+        var landing = UmadPlaygroundScenario.LandingFrom(0, ring);
+        Assert.That(landing.Length(), Is.EqualTo(13f).Within(1e-3f), "on the ring");
+        var nextAngle = ring + 0.35f * 0.8f + MathF.Tau / 8f;
+        Assert.That(Vector2.Distance(new(landing.X, landing.Z), new Vector2(MathF.Sin(nextAngle), MathF.Cos(nextAngle)) * 13f), Is.LessThan(1e-3f),
+            "on arrow 1, led by the ring's turn during the carry");
+        Assert.That(from.Length(), Is.EqualTo(13f).Within(1e-3f), "the last arrow sends you round to the first");
+    }
 }
