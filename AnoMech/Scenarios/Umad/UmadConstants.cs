@@ -103,6 +103,7 @@ public static class UmadConstants
         public const uint ManaCharge                   = 0xBAA4U; // single-target, cast 3.0s
         public const uint ManaRelease                  = 0xBAA5U; // single-target, cast 7.0s
         public const uint DoubleTroubleTrapStack       = 0xBAA7U;
+        public const uint WaveCannon                   = 0xBAA8U; // rect 100x6, instant; an arena effect, so any caster plays its beam
         public const uint AveMaria                     = 0xBAB3U; // inverted gaze (look toward)
         public const uint IndolentWill                 = 0xBAB4U; // normal gaze (look away)
         public const uint IndulgentWill                = 0xBAB5U;

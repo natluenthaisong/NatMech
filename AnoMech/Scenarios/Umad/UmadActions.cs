@@ -263,8 +263,9 @@ public static class UmadActions
 
     // -- Playground --
 
-    // Chaos's beam in the Merry-go-round: Nothingness's 6-wide line, and it kills.
-    public static readonly EnemyAction PlaygroundBeam = new(UmadConstants.ActionId.Nothingness)
+    // Chaos's beam in the Merry-go-round: Wave Cannon's 6-wide line, and it kills. Not Nothingness:
+    // that beam is the black hole's own animation, which Chaos's model can't play.
+    public static readonly EnemyAction PlaygroundBeam = new(UmadConstants.ActionId.WaveCannon)
     {
         Cast = new() { AnimationLock = 1.1f },
         Effects = [Damage(Lethal)],
