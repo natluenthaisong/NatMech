@@ -1,0 +1,217 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using AnoMech.Core;
+using AnoMech.Core.Game;
+using AnoMech.Core.Game.Ai;
+using AnoMech.Core.SimObjects;
+using static AnoMech.Scenarios.Umad.UmadConstants;
+
+namespace AnoMech.Scenarios.Umad.Playground;
+
+// Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows ride a merry-go-round
+// around Chaos and launch you the way they point; Exdeath walks you down, faster as time goes on;
+// Chaos beams the spot you stood on a moment ago. It runs until you drop, then reports how long you
+// lasted against your best.
+public sealed class UmadPlaygroundScenario : IScenario
+{
+    public string Name => "Playground: Merry-go-round";
+    public IPhase Phase => UmadZone.P3;
+    public bool SupportsSolo => true;
+    public IReadOnlyList<IScenarioAi> AiStrats => [];
+
+    private const int ArrowCount = 8;
+    private const float CarouselRadius = 13f;
+    private const float CarouselSpeed = 0.35f;      // radians a second, clockwise
+    private const float ArrowsAt = 1f;
+    private const float ArrowTriggerRadius = 2f;
+    private const float ArrowTriggerDwell = 0.15f;
+    private const float LaunchDistance = 8f;
+    private const float LaunchBind = 0.8f;
+    private const float LaunchCooldown = 1.2f;
+    // Inside the arena wall (r=20), so a launch never throws you off the edge.
+    private const float MaxLandingRadius = 17.5f;
+
+    private const float ExdeathStart = 3f;
+    private const float ExdeathStartSpeed = 3.5f;
+    private const float ExdeathTopSpeed = 6f;
+    private const float ExdeathSpeedUpPerSecond = 0.04f;
+    private const float CatchMargin = 0.4f;
+    private const float CatchCooldown = 2f;
+
+    private const float ChaosStart = 5f;
+    private const float BeamInterval = 1.5f;
+    // How far behind you the beam aims: where you stood this long ago.
+    private const float BeamLag = 0.6f;
+    private const float BeamWarning = 0.5f;
+    private const string BeamOmenPath = "vfx/omen/eff/general02f.avfx";
+    private static readonly Vector3 BeamOmenScale = new(3f, 1f, 40f);
+
+    private SimWorld world = null!;
+    private SimEnemy? chaos;
+    private SimEnemy? exdeath;
+    private readonly List<SimEventObject?> arrows = [];
+    private readonly Dictionary<SimEventObject, float> arrowDwell = [];
+    private readonly List<(float At, Vector3 Position)> trail = [];
+    private float carouselAngle;
+    private float launchCooldown;
+    private float catchCooldown;
+    private int launches;
+    private int beamsDodged;
+    private bool over;
+
+    public void Run(SimWorld worldParam, int? selectedAi)
+    {
+        world = worldParam;
+        arrows.Clear();
+        arrowDwell.Clear();
+        trail.Clear();
+        carouselAngle = 0f;
+        launchCooldown = 0f;
+        catchCooldown = 0f;
+        launches = 0;
+        beamsDodged = 0;
+        over = false;
+
+        world.Events.Add(0f, () => chaos = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.ChaosP3, NameId: BNpcNameId.Chaos, Level: 100,
+            Targetable: false, EnemyList: EnemyListMode.Always, Visibility: SpawnVisibility.Visible, Placement: new Placement(Vector3.Zero, 0f))));
+        world.Events.Add(0f, () => exdeath = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.Exdeath, NameId: BNpcNameId.Exdeath, Level: 100,
+            Targetable: false, EnemyList: EnemyListMode.Always, Visibility: SpawnVisibility.Visible, Placement: new Placement(new Vector3(0f, 0f, -16f), 0f))));
+        world.Events.Add(ArrowsAt, SpawnArrows);
+        world.Events.Add(ChaosStart, FireBeam);
+    }
+
+    public void Tick(float delta, float elapsed)
+    {
+        if (world.Party.Player is not { } player) return;
+        TurnCarousel(delta);
+        if (over) return;
+        if (!player.IsAlive())
+        {
+            End(elapsed);
+            return;
+        }
+        RecordTrail(player, elapsed);
+        TickArrows(player, delta);
+        TickExdeath(player, delta, elapsed);
+    }
+
+    private void SpawnArrows()
+    {
+        for (var i = 0; i < ArrowCount; i++)
+        {
+            var placement = CarouselSlot(i);
+            arrows.Add(world.SpawnEventObject(new EventObjectSpawnConfig
+            {
+                EObjId = EObjId.TelePortent,
+                Placement = placement,
+                EventId = EObjId.PropEventId,
+                EntityId = Spawn.PlaygroundArrowEntityIdBase + (uint)i,
+                Arg2 = ((uint)(Spawn.PlaygroundArrowArg2Serial + i) << 16) | 0x3U,
+            }));
+        }
+    }
+
+    // Each arrow points along the ride, so stepping on one flings you round the ring.
+    private Placement CarouselSlot(int index)
+    {
+        var angle = carouselAngle + index * MathF.Tau / ArrowCount;
+        var position = new Vector3(MathF.Sin(angle), 0f, MathF.Cos(angle)) * CarouselRadius;
+        return new Placement(position, angle + MathF.PI / 2f);
+    }
+
+    private void TurnCarousel(float delta)
+    {
+        carouselAngle = (carouselAngle + CarouselSpeed * delta) % MathF.Tau;
+        for (var i = 0; i < arrows.Count; i++) arrows[i]?.SetPosition(CarouselSlot(i));
+    }
+
+    private void TickArrows(SimCharacter player, float delta)
+    {
+        if (launchCooldown > 0f) { launchCooldown -= delta; return; }
+        for (var i = 0; i < arrows.Count; i++)
+        {
+            if (arrows[i] is not { } arrow) continue;
+            var slot = CarouselSlot(i);
+            if (Vector2.Distance(Flat(player.Position), Flat(slot.Position)) > ArrowTriggerRadius)
+            {
+                arrowDwell.Remove(arrow);
+                continue;
+            }
+            var dwell = arrowDwell.GetValueOrDefault(arrow) + delta;
+            arrowDwell[arrow] = dwell;
+            if (dwell < ArrowTriggerDwell) continue;
+            Launch(player, slot);
+            arrowDwell.Clear();
+            return;
+        }
+    }
+
+    private void Launch(SimCharacter player, Placement arrow)
+    {
+        var landing = arrow.Position + new Vector3(MathF.Sin(arrow.Rotation), 0f, MathF.Cos(arrow.Rotation)) * LaunchDistance;
+        if (landing.Length() > MaxLandingRadius) landing = Vector3.Normalize(landing) * MaxLandingRadius;
+        player.AddStatus(StatusId.Bind, LaunchBind);
+        (player as ISimPartyMember)?.CarryTo(landing);
+        world.SpawnOmen(VfxPath.TeleTrouncingArrowSpawnHit, new Placement(arrow.Position, 0f), Vector3.One, 2f);
+        launchCooldown = LaunchCooldown;
+        launches++;
+    }
+
+    private void TickExdeath(SimCharacter player, float delta, float elapsed)
+    {
+        if (exdeath is null || elapsed < ExdeathStart) return;
+        var speed = MathF.Min(ExdeathTopSpeed, ExdeathStartSpeed + (elapsed - ExdeathStart) * ExdeathSpeedUpPerSecond);
+        exdeath.Follow(player, speed);
+        if (catchCooldown > 0f) { catchCooldown -= delta; return; }
+        var reach = exdeath.HitboxRadius + player.HitboxRadius + CatchMargin;
+        if (Vector2.Distance(Flat(exdeath.Position), Flat(player.Position)) > reach) return;
+        catchCooldown = CatchCooldown;
+        player.Die(ActionId.DeathBomb, "Exdeath caught you");
+    }
+
+    // A chain of events rather than a Tick timer: the run counts as over once the timeline runs dry.
+    private void FireBeam()
+    {
+        if (over || chaos is null || world.Party.Player is not { } player || !player.IsAlive()) return;
+        var target = WhereYouWere(world.Events.Elapsed - BeamLag) ?? player.Position;
+        var along = target - chaos.Position;
+        if (new Vector2(along.X, along.Z).LengthSquared() < 0.01f) along = new Vector3(0f, 0f, 1f);
+        var rotation = MathF.Atan2(along.X, along.Z);
+        chaos.SetPosition(new Placement(chaos.Position, rotation));
+        world.SpawnOmen(BeamOmenPath, new Placement(chaos.Position, rotation), BeamOmenScale, BeamWarning);
+        world.Events.Add(BeamWarning, () =>
+        {
+            if (over || chaos is null) return;
+            if (chaos.Cast(UmadActions.PlaygroundBeam, chaos.Position + along) is { } shot && shot.Kills.Count == 0) beamsDodged++;
+        });
+        world.Events.Add(BeamInterval, FireBeam);
+    }
+
+    private void RecordTrail(SimCharacter player, float elapsed)
+    {
+        trail.Add((elapsed, player.Position));
+        trail.RemoveAll(t => elapsed - t.At > BeamLag * 3f);
+    }
+
+    private Vector3? WhereYouWere(float at) =>
+        trail.Count == 0 ? null : trail.MinBy(t => MathF.Abs(t.At - at)).Position;
+
+    private void End(float elapsed)
+    {
+        over = true;
+        exdeath?.Follow(null);
+        var best = Plugin.Config is { } config ? config.BestPlaygroundSeconds : 0f;
+        var record = elapsed > best;
+        if (record && Plugin.Config is { } save)
+        {
+            save.BestPlaygroundSeconds = elapsed;
+            save.Save();
+        }
+        world.Announce($"Merry-go-round: lasted {elapsed:F1}s, {launches} launches, {beamsDodged} beams dodged"
+                       + (record ? " -- new best!" : $" (best {best:F1}s)"));
+    }
+
+    private static Vector2 Flat(Vector3 p) => new(p.X, p.Z);
+}

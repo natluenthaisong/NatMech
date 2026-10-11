@@ -14,6 +14,7 @@ using AnoMech.Scenarios.Umad.P4KefkaSays;
 using AnoMech.Scenarios.Umad.P5Celestriad;
 using AnoMech.Scenarios.Umad.P5Exaflares;
 using AnoMech.Scenarios.Umad.P5Flood;
+using AnoMech.Scenarios.Umad.Playground;
 using AnoMech.Scenarios.Uwu.UltimatePredation;
 using AnoMech.Scenarios.Uwu.UltimateSuppression;
 
@@ -33,6 +34,7 @@ public static class ScenarioCatalog
         new UmadP5ExaflaresScenario(),
         new UmadP5CelestriadScenario(),
         new UmadP5ForsakenNull(),
+        new UmadPlaygroundScenario(),
         new TopP2PartySynergyScenario(),
         new TopP5DeltaScenario(),
         new TopP5SigmaScenario(),

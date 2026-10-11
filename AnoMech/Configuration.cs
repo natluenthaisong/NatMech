@@ -23,6 +23,7 @@ public class Configuration : IPluginConfiguration
     // Channeling row for the tether from you to your spot; 0 = none.
     public ushort BlackHoleSpotTether { get; set; } = 130;
     public bool BlackHoleSpotTetherReversed { get; set; } = false;
+    public float BestPlaygroundSeconds { get; set; } = 0f;
     public bool BlackHoleCallouts { get; set; } = true;
     public bool SpeakBlackHoleCallouts { get; set; } = false;
     public bool AutoCollapseWhileRunning { get; set; } = false;

@@ -82,6 +82,8 @@ public static class UmadConstants
         // Black Hole's guide arrows reuse the Tele-portent prop; clear of P1's own arrows.
         public const uint GuideArrowEntityIdBase = 0x4000EBC0U;
         public const int GuideArrowArg2Serial = 0x70;
+        public const uint PlaygroundArrowEntityIdBase = 0x4000EBF0U;
+        public const int PlaygroundArrowArg2Serial = 0x90;
     }
 
     public static class ActionId

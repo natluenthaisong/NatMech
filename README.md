@@ -29,6 +29,10 @@ Changes from AnoMech:
   aloud with the Windows voice. The sim never reaches ACT/IINACT, so cactbot itself can't call it.
 - Dancing Mad P3 Black Hole: **tether mistakes** are logged at each Nothingness (you weren't holding
   your tether, or held someone else's), in chat and on screen, and count against a clean run.
+- Dancing Mad **Playground: Merry-go-round** (Solo): P1's Tele-portent arrows ride a ring round
+  Chaos and launch you the way they point, Exdeath walks you down (faster over time) and Chaos beams
+  the spot you stood on a moment ago. It runs until you drop and reports how long you lasted
+  against your best.
 - **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
   Outside multiplayer only.
 
