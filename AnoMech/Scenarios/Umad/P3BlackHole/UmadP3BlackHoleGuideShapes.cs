@@ -83,7 +83,7 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
 {
     private const string CirclePath = "vfx/omen/eff/general_1bpf.avfx";
     private const string RectPath = "vfx/omen/eff/general02_pf.avfx";
-    private const float ArmHalfWidth = 0.12f;
+    private const float ArmHalfWidth = 0.2f;
     private const float ThickLineHalfWidth = 0.3f;
     private const float ShortestLine = 0.3f;
 

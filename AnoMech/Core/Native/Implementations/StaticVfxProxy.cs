@@ -14,8 +14,9 @@ internal sealed unsafe class StaticVfxProxy(VfxObject* vfx) : IStaticVfxProxy
         vfx->Position = placement.Position;
         vfx->Rotation = Quaternion.CreateFromYawPitchRoll(placement.Rotation, 0f, 0f);
         vfx->Scale = scale;
-        vfx->Flags |= 0x2;
-        vfx->Update(0f, -1);
+        // Not Update(0, -1) as at spawn: that restarts the effect, so a marker moved every frame
+        // never got past its fade-in and stayed invisible.
+        vfx->NotifyTransformChanged();
     }
 
     public void SetColor(Vector4 color) => vfx->Color = color;
