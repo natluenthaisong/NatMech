@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using AnoMech.Core.Game.Party;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 using static AnoMech.Scenarios.Umad.UmadConstants;
 
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
@@ -11,6 +12,10 @@ namespace AnoMech.Scenarios.Umad.P3BlackHole;
 public sealed class UmadP3BlackHoleSettingsWindow
 {
     public UmadP3BlackHoleStateOverrides Overrides { get; } = new();
+
+    // Every dropdown, slider and button here is this wide, matching the main window's Setup dropdowns.
+    private const float ControlWidth = 180f;
+    private static float Width => ControlWidth * ImGuiHelpers.GlobalScale;
 
     // Which seat the per-player rows are showing. UI state only; never broadcast.
     private PartyRole editingSeat = PartyRole.MainTank;
@@ -28,7 +33,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         }
 #endif
         Section("Your debuffs");
-        if (ImGui.SmallButton("Reset to random"))
+        if (ImGui.Button("Reset to random", new System.Numerics.Vector2(Width, 0f)))
         {
 #if DEBUG
             Overrides.SlapAttacks[0] = null;
@@ -53,7 +58,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
 
     public void DrawPerPlayer()
     {
-        if (ImGui.Button("Auto")) ResetPerPlayer();
+        if (ImGui.Button("Reset to random", new System.Numerics.Vector2(Width, 0f))) ResetPerPlayer();
         if (SettingsGrid.Begin("##umadp3blackholeplayers"))
         {
             editingSeat = SettingsGrid.SeatRow("##bhseat", editingSeat);
@@ -157,7 +162,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         ImGui.TextDisabled("Above your spot:  O safe spot   /\\ stack   [] hold your tether");
 
         var tetherIndex = Math.Max(0, Array.FindIndex(SpotTethers, t => t.Id == Plugin.Config.BlackHoleSpotTether));
-        ImGui.SetNextItemWidth(160f);
+        ImGui.SetNextItemWidth(Width);
         if (ImGui.Combo("Tether to your spot", ref tetherIndex, SpotTetherNames, SpotTetherNames.Length))
             SetConfig(() => Plugin.Config.BlackHoleSpotTether = SpotTethers[tetherIndex].Id);
         Tooltip("A game tether from you to your spot; it goes away once you're there.");
@@ -174,7 +179,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         {
             ImGui.SameLine();
             var brightness = Plugin.Config.BlackHoleMarkerBrightness;
-            ImGui.SetNextItemWidth(110f);
+            ImGui.SetNextItemWidth(Width);
             if (ImGui.SliderFloat("Brightness", ref brightness, 0.5f, 5f, "%.1f"))
                 SetConfig(() => Plugin.Config.BlackHoleMarkerBrightness = brightness);
         }
@@ -221,7 +226,6 @@ public sealed class UmadP3BlackHoleSettingsWindow
         Section("Thunder III tank plan");
         ImGui.TextDisabled("What bot tanks do for each tank buster.");
         DrawThunderIIICombo("1st (~43s)##thunder1", Overrides.ThunderSet1, Overrides.ThunderSet2, v => Overrides.ThunderSet1 = v);
-        ImGui.SameLine();
         DrawThunderIIICombo("2nd (~84s)##thunder2", Overrides.ThunderSet2, Overrides.ThunderSet1, v => Overrides.ThunderSet2 = v);
     }
 
@@ -237,7 +241,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
     // recover in the ~41s between sets.
     private static void DrawThunderIIICombo(string label, ThunderIIIAssignment current, ThunderIIIAssignment otherSet, Action<ThunderIIIAssignment> set)
     {
-        ImGui.SetNextItemWidth(140f);
+        ImGui.SetNextItemWidth(Width);
         if (!ImGui.BeginCombo(label, ThunderIIIPlans.First(p => p.Plan == current).Name)) return;
         var otherIsShare = otherSet is ThunderIIIAssignment.ShareMtFirst or ThunderIIIAssignment.ShareOtFirst;
         foreach (var (plan, name) in ThunderIIIPlans)
