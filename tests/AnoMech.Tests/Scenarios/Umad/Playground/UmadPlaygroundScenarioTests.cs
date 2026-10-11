@@ -118,26 +118,30 @@ public class UmadPlaygroundScenarioTests
     }
 
     [Test]
-    public void ALapOfLaunchesConfusesExdeathIntoChaos()
+    public void ALapConfusesExdeathIntoThunderingChaosWhoFightsBack()
     {
         // The fake doesn't fly you, so standing on the south arrow launches you from it every 0.95s.
         var confused = 0;
+        var fightBacks = 0;
         var exdeathConfused = false;
         ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
         {
             PlayerRole = Me,
-            StopAt = 14f,
+            StopAt = 20f,
             WriteArtifactsOnFailure = false,
             Takeovers = [new Takeover(1.5f, new Vector2(0f, 13f))],
             Probe = p =>
             {
                 p.Game.GodMode = true;
-                confused = ((UmadPlaygroundScenario)p.Game.ActiveScenario!).ConfusedExdeaths;
+                var playground = (UmadPlaygroundScenario)p.Game.ActiveScenario!;
+                confused = playground.ConfusedExdeaths;
+                fightBacks = playground.FightBacks;
                 exdeathConfused |= p.World.Children.OfType<SimEnemy>()
                     .Any(e => e.BNpcBaseId == UmadConstants.BNpcBaseId.Exdeath && e.HasStatus(UmadConstants.StatusId.Confused));
             },
         });
         Assert.That(confused, Is.EqualTo(1), "eight launches in a row");
         Assert.That(exdeathConfused, Is.True);
+        Assert.That(fightBacks, Is.EqualTo(1), "Chaos answers the second Thunder III");
     }
 }

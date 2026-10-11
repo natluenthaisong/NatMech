@@ -12,10 +12,10 @@ namespace AnoMech.Scenarios.Umad.Playground;
 
 // Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows stand in a ring around
 // Chaos, each pointing at the next and launching you onto it, so you can ride the merry-go-round arrow
-// to arrow, out of Exdeath's reach while you ride; Exdeath walks you down, faster as time goes on; Chaos beams the spot you stood on a
-// moment ago. Ride a whole lap and Exdeath gets Confused and Thunder IIIs Chaos instead, just for the
-// meme. It runs until you drop, then reports how long you
-// lasted against your best.
+// to arrow, out of Exdeath's reach while you ride. Exdeath walks you down, faster as time goes on;
+// Chaos beams the spot you stood on a moment ago. Ride a whole lap and Exdeath gets Confused and
+// Thunder IIIs Chaos instead, and after the second hit Chaos Damning Edicts him back, just for the
+// meme. It runs until you drop, then reports how long you lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
 {
     public string Name => "Playground: Merry-go-round";
@@ -43,6 +43,8 @@ public sealed class UmadPlaygroundScenario : IScenario
     private const float ThunderCastAt = 0.5f;
     private const float ThunderHitsAt = 5.5f;   // ThunderIII_Cast's 5s bar, then two hits 3s apart
     private const float ThunderSecondHit = 3f;
+    // Damning Edict's 5s bar plus its lock: Chaos leaves you alone till it's out.
+    private const float FightBackSeconds = 6.2f;
 
     private const float ChaosStart = 5f;
     private const float BeamInterval = 1.5f;
@@ -58,6 +60,8 @@ public sealed class UmadPlaygroundScenario : IScenario
     private SimEnemy? thunderHelper;
     private int lapLaunches;
     private float confusedFor;
+    private int thunderHits;
+    private float chaosBusyUntil;
     private readonly List<SimEventObject?> arrows = [];
     private readonly Dictionary<SimEventObject, float> arrowDwell = [];
     private readonly List<(float At, Vector3 Position)> trail = [];
@@ -67,6 +71,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     // Caught by Exdeath, or would have been in god mode.
     internal int Catches { get; private set; }
     internal int ConfusedExdeaths { get; private set; }
+    internal int FightBacks { get; private set; }
     private int beamsDodged;
     private bool over;
 
@@ -81,8 +86,11 @@ public sealed class UmadPlaygroundScenario : IScenario
         launches = 0;
         Catches = 0;
         ConfusedExdeaths = 0;
+        FightBacks = 0;
         lapLaunches = 0;
         confusedFor = 0f;
+        thunderHits = 0;
+        chaosBusyUntil = 0f;
         beamsDodged = 0;
         over = false;
 
@@ -201,6 +209,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     {
         if (exdeath is null || chaos is null || confusedFor > 0f) return;
         confusedFor = ConfusedSeconds;
+        thunderHits = 0;
         ConfusedExdeaths++;
         exdeath.AddStatus(StatusId.Confused, ConfusedSeconds);
         world.Events.Add(ThunderCastAt, () => exdeath?.Cast(ActionId.ThunderIII_Cast, chaos, animationLock: 3.1f));
@@ -213,6 +222,17 @@ public sealed class UmadPlaygroundScenario : IScenario
         if (over || chaos is null) return;
         thunderHelper?.SetPosition(chaos.Position);
         thunderHelper?.Cast(ActionId.ThunderIII_Resolve, chaos);
+        if (++thunderHits == 2) ChaosFightsBack();
+    }
+
+    private void ChaosFightsBack()
+    {
+        if (chaos is null || exdeath is null) return;
+        var toExdeath = exdeath.Position - chaos.Position;
+        chaos.SetPosition(new Placement(chaos.Position, MathF.Atan2(toExdeath.X, toExdeath.Z)));
+        chaos.Cast(ActionId.DamningEdict, exdeath, animationLock: 1.1f);
+        chaosBusyUntil = world.Events.Elapsed + FightBackSeconds;
+        FightBacks++;
     }
 
     // In the air from a launch, or standing on an arrow: the merry-go-round is safe from Exdeath.
@@ -224,6 +244,11 @@ public sealed class UmadPlaygroundScenario : IScenario
     private void FireBeam()
     {
         if (over || chaos is null || world.Party.Player is not { } player || !player.IsAlive()) return;
+        if (world.Events.Elapsed < chaosBusyUntil)
+        {
+            world.Events.Add(BeamInterval, FireBeam);
+            return;
+        }
         var target = WhereYouWere(world.Events.Elapsed - BeamLag) ?? player.Position;
         var along = target - chaos.Position;
         if (new Vector2(along.X, along.Z).LengthSquared() < 0.01f) along = new Vector3(0f, 0f, 1f);
