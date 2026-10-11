@@ -53,10 +53,29 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         for (; mistakesShown < tetherMistakes.Count; mistakesShown++)
             calloutBanner.ShowMistake(tetherMistakes[mistakesShown], speak);
         calloutBanner.Draw();
+        if (!Plugin.Config.BlackHoleGameMarkers)
+            UmadP3BlackHoleGuideOverlay.Draw(GuideShapes(s), world);
+    }
+
+    private List<GuideShape> GuideShapes(UmadP3BlackHoleState s)
+    {
+        var shapes = new List<GuideShape>();
         if (Plugin.Config.ShowBlackHoleSpotHint)
-            UmadP3BlackHoleSpotHint.Draw(s.ScenarioObjects, world);
+            UmadP3BlackHoleSpotHint.AddShapes(shapes, s.ScenarioObjects, world);
         if (Plugin.Config.ShowBlackHoleTetherGuide)
-            UmadP3BlackHoleTetherGuide.Draw(s.ScenarioObjects, world);
+            UmadP3BlackHoleTetherGuide.AddShapes(shapes, s.ScenarioObjects, world);
+        return shapes;
+    }
+
+    // The floor-marker guides live in the world, so they follow the sim's frame, not the UI's.
+    private void TickGroundGuide()
+    {
+        if (groundGuide is null) return;
+        if (Plugin.Config is { BlackHoleGameMarkers: true } && LastState is { } s
+            && Plugin.MultiplayerInstance is not { IsConnected: true, IsHost: false })
+            groundGuide.Show(GuideShapes(s));
+        else
+            groundGuide.Clear();
     }
 
     public IReadOnlyList<IScenarioAi> AiStrats =>
@@ -73,6 +92,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
     });
 
     private UmadP3BlackHoleState state = null!;
+    private UmadP3BlackHoleGroundGuide? groundGuide;
     private SimWorld world = null!;
     private SimParty party = null!;
     private List<Vector3>[] BlackHolePositions = null!;
@@ -99,6 +119,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         party = worldParam.Party;
         state = new UmadP3BlackHoleState(world, settingsWindow.Overrides);
         LastState = state;
+        groundGuide = new UmadP3BlackHoleGroundGuide(world);
         callouts.Reset();
         calloutBanner.Clear();
         tetherMistakes.Clear();
@@ -205,6 +226,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
 
     public void Tick(float delta, float elapsed)
     {
+       TickGroundGuide();
        CleanseCooldown -= delta;
        CleanseCooldown = float.Max(CleanseCooldown, 0f);
        if (CleanseCooldown == 0f && PrimodialCrustsToResolve > 0)

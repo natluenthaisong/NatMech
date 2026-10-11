@@ -1,3 +1,5 @@
+using System.Numerics;
+using AnoMech.Core.Game;
 using AnoMech.Core.Native.Interfaces;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 
@@ -6,4 +8,13 @@ namespace AnoMech.Core.Native.Implementations;
 internal sealed unsafe class StaticVfxProxy(VfxObject* vfx) : IStaticVfxProxy
 {
     public void Remove() => vfx->CleanupRender();
+
+    public void Move(Placement placement, Vector3 scale)
+    {
+        vfx->Position = placement.Position;
+        vfx->Rotation = Quaternion.CreateFromYawPitchRoll(placement.Rotation, 0f, 0f);
+        vfx->Scale = scale;
+        vfx->Flags |= 0x2;
+        vfx->Update(0f, -1);
+    }
 }

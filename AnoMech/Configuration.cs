@@ -17,6 +17,7 @@ public class Configuration : IPluginConfiguration
     public bool EnableMechanicResultMarks { get; set; } = false;
     public bool ShowBlackHoleTetherGuide { get; set; } = false;
     public bool ShowBlackHoleSpotHint { get; set; } = true;
+    public bool BlackHoleGameMarkers { get; set; } = true;
     public bool BlackHoleCallouts { get; set; } = true;
     public bool SpeakBlackHoleCallouts { get; set; } = false;
     public bool AutoCollapseWhileRunning { get; set; } = false;

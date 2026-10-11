@@ -155,6 +155,17 @@ public sealed class UmadP3BlackHoleSettingsWindow
             ImGui.SetTooltip(mpGuest
                 ? "Drawn from the strat, which only runs solo or on the host."
                 : "Marks where the selected strat sends your seat for each mechanic (Slap Happy, Edict, Look upon Me, Thunder, implosion, Stomp-a-Mole towers, back to the stack), with a line to it. Labelled Stack when teammates go there too, Safe spot otherwise.");
+
+        var markers = Plugin.Config.BlackHoleGameMarkers;
+        ImGui.BeginDisabled(mpGuest);
+        if (ImGui.Checkbox("Draw them with the game's own floor markers", ref markers))
+        {
+            Plugin.Config.BlackHoleGameMarkers = markers;
+            Plugin.Config.Save();
+        }
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("On: the guide and spot are drawn on the floor with the friendly-coloured versions of the game's telegraph circles and lines, like a real marker: hidden behind walls and characters, one colour, no text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
     }
 
     private static void DrawCalloutToggles(bool mpGuest)

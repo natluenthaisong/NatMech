@@ -19,6 +19,9 @@ Changes from AnoMech:
   selected strat sends you for each mechanic (Slap Happy, Edict, Look upon Me, Thunder, implosion,
   Stomp-a-Mole towers, back to the stack) with a line to it, labelled Stack or Safe spot. On by
   default; toggle it under Scenario settings.
+- The Black Hole tether guide and safe/stack spot are drawn on the floor with the game's own
+  friendly-coloured telegraph circles and lines by default, like a real marker (one colour, no
+  text). Untick "Draw them with the game's own floor markers" for the coloured, labelled overlay.
 - Dancing Mad P3 Black Hole: **callouts** worded like cactbot's: your line number, Slap Happy,
   Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your
   tether jobs (Get North tether, Get both tethers, Pass tether). Shown on screen, optionally read

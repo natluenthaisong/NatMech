@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Numerics;
 using AnoMech.Core.SimObjects;
 
@@ -34,18 +35,15 @@ public static class UmadP3BlackHoleSpotHint
 
     public static string Label(SpotHint hint) => hint.Stack ? "Stack" : "Safe spot";
 
-    // ImGui packs colours as 0xAABBGGRR.
-    private const uint SpotColor = 0xFFFF60FF;
     private const float TextHeight = 1.2f;
 
-    internal static void Draw(UmadP3BlackHoleScenarioObjects objects, SimWorld world)
+    internal static void AddShapes(List<GuideShape> shapes, UmadP3BlackHoleScenarioObjects objects, SimWorld world)
     {
         if (world.Party.Player is not { } player || For(objects, world, player) is not { } hint) return;
-        var overlay = new WorldOverlay(world.Coordinates);
-        overlay.Circle(hint.Spot, SpotRadius, SpotColor);
-        overlay.Text(hint.Spot + new Vector3(0f, TextHeight, 0f), Label(hint), SpotColor);
+        shapes.Add(new GuideRing(hint.Spot, SpotRadius, GuideColour.Hint));
+        shapes.Add(new GuideText(hint.Spot + new Vector3(0f, TextHeight, 0f), Label(hint), GuideColour.Hint));
         if (Vector2.Distance(Flat(player.Position), Flat(hint.Spot)) > SpotRadius)
-            overlay.Line(player.Position, hint.Spot, SpotColor, 2f);
+            shapes.Add(new GuideLine(player.Position, hint.Spot, GuideColour.Hint));
     }
 
     private static Vector2 Flat(Vector3 p) => new(p.X, p.Z);

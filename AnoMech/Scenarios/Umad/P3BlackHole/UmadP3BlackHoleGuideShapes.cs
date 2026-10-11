@@ -1,0 +1,95 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using AnoMech.Core.SimObjects;
+
+namespace AnoMech.Scenarios.Umad.P3BlackHole;
+
+public enum GuideColour { Take, Held, Spot, Hint }
+
+// The guides as plain shapes, so one description feeds both ways of drawing them: the overlay
+// (colours, text) and the game's own floor markers (one colour, no text). OverlayOnly: pointless
+// or in the way as a floor marker.
+public abstract record GuideShape(GuideColour Colour, bool OverlayOnly);
+public sealed record GuideRing(Vector3 Centre, float Radius, GuideColour Colour, bool OverlayOnly = false)
+    : GuideShape(Colour, OverlayOnly);
+public sealed record GuideLine(Vector3 From, Vector3 To, GuideColour Colour, bool Thick = false, bool OverlayOnly = false)
+    : GuideShape(Colour, OverlayOnly);
+public sealed record GuideText(Vector3 At, string Text, GuideColour Colour) : GuideShape(Colour, OverlayOnly: true);
+
+internal static class UmadP3BlackHoleGuideOverlay
+{
+    // ImGui packs colours as 0xAABBGGRR.
+    private static uint Packed(GuideColour colour) => colour switch
+    {
+        GuideColour.Take => 0xFF00C8FF,
+        GuideColour.Held => 0xFF50FF50,
+        GuideColour.Spot => 0xFFFFDC00,
+        _ => 0xFFFF60FF,
+    };
+
+    public static void Draw(IEnumerable<GuideShape> shapes, SimWorld world)
+    {
+        var overlay = new WorldOverlay(world.Coordinates);
+        foreach (var shape in shapes)
+        {
+            switch (shape)
+            {
+                case GuideRing ring: overlay.Circle(ring.Centre, ring.Radius, Packed(ring.Colour)); break;
+                case GuideLine line: overlay.Line(line.From, line.To, Packed(line.Colour), line.Thick ? 5f : 2f); break;
+                case GuideText text: overlay.Text(text.At, text.Text, Packed(text.Colour)); break;
+            }
+        }
+    }
+}
+
+// The guides on the floor with the game's "ally" omens, the friendly-coloured twins of the circle
+// and line telegraphs, so they read as a marker rather than an attack. Markers are pooled and moved
+// each frame instead of respawned.
+internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
+{
+    private const string CirclePath = "vfx/omen/eff/general_1bpf.avfx";
+    private const string RectPath = "vfx/omen/eff/general02_pf.avfx";
+    private const float LineHalfWidth = 0.15f;
+    private const float ThickLineHalfWidth = 0.3f;
+    private const float ShortestLine = 0.3f;
+
+    private readonly List<SimGroundMarker> rings = new();
+    private readonly List<SimGroundMarker> lines = new();
+
+    public void Show(IEnumerable<GuideShape> shapes)
+    {
+        int ringCount = 0, lineCount = 0;
+        foreach (var shape in shapes)
+        {
+            if (shape.OverlayOnly) continue;
+            switch (shape)
+            {
+                case GuideRing ring:
+                    Marker(rings, ringCount++, CirclePath).Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
+                    break;
+                case GuideLine line:
+                    var along = line.To - line.From;
+                    var length = new Vector2(along.X, along.Z).Length();
+                    if (length < ShortestLine) break;
+                    var halfWidth = line.Thick ? ThickLineHalfWidth : LineHalfWidth;
+                    Marker(lines, lineCount++, RectPath).Place(line.From, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
+                    break;
+            }
+        }
+        for (var i = ringCount; i < rings.Count; i++) rings[i].Hide();
+        for (var i = lineCount; i < lines.Count; i++) lines[i].Hide();
+    }
+
+    public void Clear()
+    {
+        foreach (var marker in rings) marker.Hide();
+        foreach (var marker in lines) marker.Hide();
+    }
+
+    private SimGroundMarker Marker(List<SimGroundMarker> pool, int index, string path)
+    {
+        if (index == pool.Count) pool.Add(world.SpawnGroundMarker(path));
+        return pool[index];
+    }
+}

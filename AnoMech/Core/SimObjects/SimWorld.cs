@@ -207,6 +207,15 @@ public sealed class SimWorld : ISimObject, IDisposable
     public void SpawnActionOmen(uint actionId, Vector3 origin, float rotation, float durationSeconds)
         => children.Add(new SimOmen(Coordinates, actionId, origin, rotation, durationSeconds));
 
+    // A guide marker drawn with a game omen file, kept until the caller despawns it. Local only:
+    // not mirrored to peers, since a guide is for this player.
+    public SimGroundMarker SpawnGroundMarker(string omenPath)
+    {
+        var marker = new SimGroundMarker(Coordinates, omenPath);
+        children.Add(marker);
+        return marker;
+    }
+
     // Change the active weather mid-scenario. weatherId is a Weather-sheet row;
     // transition is the fade-in time in seconds. A scenario's default weather
     // (TargetInstance.WeatherId) is re-applied automatically on restart, so any
