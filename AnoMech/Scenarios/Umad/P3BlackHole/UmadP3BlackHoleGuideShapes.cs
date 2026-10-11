@@ -57,8 +57,10 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
     private readonly List<SimGroundMarker> rings = new();
     private readonly List<SimGroundMarker> lines = new();
 
-    public void Show(IEnumerable<GuideShape> shapes)
+    // tint: multiplies the omens' own colours (see Rainbow); null keeps them as the game draws them.
+    public void Show(IEnumerable<GuideShape> shapes, Vector4? tint = null)
     {
+        var colour = tint ?? Vector4.One;
         int ringCount = 0, lineCount = 0;
         foreach (var shape in shapes)
         {
@@ -66,14 +68,18 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
             switch (shape)
             {
                 case GuideRing ring:
-                    Marker(rings, ringCount++, CirclePath).Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
+                    var ringMarker = Marker(rings, ringCount++, CirclePath);
+                    ringMarker.Tint(colour);
+                    ringMarker.Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
                     break;
                 case GuideLine line:
                     var along = line.To - line.From;
                     var length = new Vector2(along.X, along.Z).Length();
                     if (length < ShortestLine) break;
                     var halfWidth = line.Thick ? ThickLineHalfWidth : LineHalfWidth;
-                    Marker(lines, lineCount++, RectPath).Place(line.From, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
+                    var lineMarker = Marker(lines, lineCount++, RectPath);
+                    lineMarker.Tint(colour);
+                    lineMarker.Place(line.From, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
                     break;
             }
         }
@@ -85,6 +91,28 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
     {
         foreach (var marker in rings) marker.Hide();
         foreach (var marker in lines) marker.Hide();
+    }
+
+    // A hue cycling every `period` seconds, scaled by `brightness`. The tint multiplies the omen's
+    // own colour, so a fully saturated hue could black out a channel the omen leans on; Saturation
+    // keeps some white in every colour.
+    private const float Saturation = 0.8f;
+
+    public static Vector4 Rainbow(double seconds, float brightness, double period = 2.0)
+    {
+        var hue = (float)(seconds / period % 1.0) * 6f;
+        var x = 1f - MathF.Abs(hue % 2f - 1f);
+        var (r, g, b) = (int)hue switch
+        {
+            0 => (1f, x, 0f),
+            1 => (x, 1f, 0f),
+            2 => (0f, 1f, x),
+            3 => (0f, x, 1f),
+            4 => (x, 0f, 1f),
+            _ => (1f, 0f, x),
+        };
+        float Channel(float c) => (1f - Saturation + Saturation * c) * brightness;
+        return new Vector4(Channel(r), Channel(g), Channel(b), 1f);
     }
 
     private SimGroundMarker Marker(List<SimGroundMarker> pool, int index, string path)

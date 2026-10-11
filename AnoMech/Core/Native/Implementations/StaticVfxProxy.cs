@@ -17,4 +17,6 @@ internal sealed unsafe class StaticVfxProxy(VfxObject* vfx) : IStaticVfxProxy
         vfx->Flags |= 0x2;
         vfx->Update(0f, -1);
     }
+
+    public void SetColor(Vector4 color) => vfx->Color = color;
 }

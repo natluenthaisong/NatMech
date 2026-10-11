@@ -166,6 +166,27 @@ public sealed class UmadP3BlackHoleSettingsWindow
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("On: the guide and spot are drawn on the floor with the friendly-coloured versions of the game's telegraph circles and lines, like a real marker: hidden behind walls and characters, one colour, no text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
+
+        var rainbow = Plugin.Config.BlackHoleRainbowMarkers;
+        var brightness = Plugin.Config.BlackHoleMarkerBrightness;
+        ImGui.BeginDisabled(mpGuest || !markers);
+        if (ImGui.Checkbox("Rainbow", ref rainbow))
+        {
+            Plugin.Config.BlackHoleRainbowMarkers = rainbow;
+            Plugin.Config.Save();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("Cycles the floor markers through the rainbow so they can't be mistaken for an attack.");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(120f);
+        ImGui.BeginDisabled(!rainbow);
+        if (ImGui.SliderFloat("Brightness", ref brightness, 0.5f, 5f, "%.1f"))
+        {
+            Plugin.Config.BlackHoleMarkerBrightness = brightness;
+            Plugin.Config.Save();
+        }
+        ImGui.EndDisabled();
+        ImGui.EndDisabled();
     }
 
     private static void DrawCalloutToggles(bool mpGuest)

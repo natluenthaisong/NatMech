@@ -18,6 +18,8 @@ public class Configuration : IPluginConfiguration
     public bool ShowBlackHoleTetherGuide { get; set; } = false;
     public bool ShowBlackHoleSpotHint { get; set; } = true;
     public bool BlackHoleGameMarkers { get; set; } = true;
+    public bool BlackHoleRainbowMarkers { get; set; } = true;
+    public float BlackHoleMarkerBrightness { get; set; } = 2f;
     public bool BlackHoleCallouts { get; set; } = true;
     public bool SpeakBlackHoleCallouts { get; set; } = false;
     public bool AutoCollapseWhileRunning { get; set; } = false;

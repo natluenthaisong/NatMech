@@ -55,4 +55,27 @@ public class UmadP3BlackHoleGroundGuideTests
         world.Despawn();
         Assert.That(Live(vfx), Is.Empty, "a world reset clears the floor");
     }
+
+    [Test]
+    public void RainbowTintReachesEveryMarkerAndCyclesWithTime()
+    {
+        FakeGame.Install();
+        using var world = new SimWorld(new EventScheduler());
+        var vfx = (FakeVfxFunctions)Natives.Vfx;
+        var guide = new UmadP3BlackHoleGroundGuide(world);
+        GuideShape[] shapes = [
+            new GuideRing(new Vector3(3f, 0f, 4f), 1f, GuideColour.Hint),
+            new GuideLine(Vector3.Zero, new Vector3(3f, 0f, 4f), GuideColour.Hint),
+        ];
+        var red = UmadP3BlackHoleGroundGuide.Rainbow(0, brightness: 2f);
+        guide.Show(shapes, red);
+        Assert.That(vfx.Static.Select(h => h.Color), Is.All.EqualTo(red));
+        Assert.That(red.X, Is.GreaterThan(red.Y).And.GreaterThan(red.Z), "starts red");
+
+        var later = UmadP3BlackHoleGroundGuide.Rainbow(2.0 / 3.0, brightness: 2f);
+        guide.Show(shapes, later);
+        Assert.That(vfx.Static.Select(h => h.Color), Is.All.EqualTo(later));
+        Assert.That(later.Y, Is.GreaterThan(later.X), "a third of the way round it has turned green");
+        Assert.That(new[] { later.X, later.Y, later.Z }, Is.All.GreaterThan(0f), "never blacks out a channel");
+    }
 }

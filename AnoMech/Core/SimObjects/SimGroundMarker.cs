@@ -18,6 +18,7 @@ public sealed class SimGroundMarker : ISimObject
     private IStaticVfxProxy? vfx;
     private Placement placed;
     private Vector3 scale;
+    private Vector4 color = Vector4.One;
     private bool despawned;
 
     internal SimGroundMarker(Coordinates coordinates, string path)
@@ -36,6 +37,7 @@ public sealed class SimGroundMarker : ISimObject
         if (vfx is null)
         {
             vfx = Natives.Vfx.SpawnStatic(path, coordinates.ToGlobal(placement), newScale);
+            if (color != Vector4.One) vfx?.SetColor(color);
         }
         else if (Vector3.Distance(placed.Position, position) > MoveEpsilon
                  || MathF.Abs(placed.Rotation - rotation) > MoveEpsilon
@@ -46,6 +48,13 @@ public sealed class SimGroundMarker : ISimObject
         else return;
         placed = placement;
         scale = newScale;
+    }
+
+    public void Tint(Vector4 newColor)
+    {
+        if (newColor == color) return;
+        color = newColor;
+        vfx?.SetColor(newColor);
     }
 
     public void Hide()

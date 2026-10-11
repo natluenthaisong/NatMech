@@ -11,6 +11,7 @@ internal sealed class FakeVfxHandle : IActorVfxProxy, IStaticVfxProxy
     public Vector3 Scale { get; private set; }
     public int Moves { get; private set; }
     public bool Removed { get; private set; }
+    public Vector4 Color { get; private set; } = Vector4.One;
 
     public FakeVfxHandle() { }
 
@@ -22,6 +23,8 @@ internal sealed class FakeVfxHandle : IActorVfxProxy, IStaticVfxProxy
     }
 
     public void Remove() => Removed = true;
+
+    public void SetColor(Vector4 color) => Color = color;
 
     public void Move(Placement placement, Vector3 scale)
     {
