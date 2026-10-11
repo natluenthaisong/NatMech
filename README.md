@@ -8,7 +8,10 @@ original. Open it with `/natmech` (or `/nat`).
 
 Changes from AnoMech:
 - Dancing Mad P3 Black Hole: **D>S>A double tethers** strat (modified DSA: Support 1 solo + DPS 1
-  both tethers in BH1, Support 3 both tethers + DPS 3 solo in BH4), selected by default.
+  both tethers in BH1, Support 3 both tethers + DPS 3 solo in BH4).
+- Dancing Mad P3 Black Hole: **D>S>A double tethers, Stomp centre bait**, the same strat except
+  that for Stomp-a-Mole the whole party stacks in the dead centre to bait the first Blizzard III,
+  then spreads to the corners. Selected by default.
 - Dancing Mad P3 Black Hole: optional **tether guide**, an on-screen drawing of the tether(s) the
   selected strat gives you, where to step onto the beam, and where to hold it. Turn it on under
   Scenario settings; it draws solo and for a multiplayer host.

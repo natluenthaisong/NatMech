@@ -7,6 +7,7 @@ namespace AnoMech.Standalone;
 internal static class Program
 {
     private const int MaxSelfTestFrames = 200 * 60;
+    private static readonly int DefaultStrat = new AnoMech.Scenarios.Umad.P3BlackHole.UmadP3BlackHoleScenario().DefaultAi;
 
     [STAThread]
     private static int Main(string[] args)
@@ -24,7 +25,7 @@ internal static class Program
     private static int SelfTest(string outPath)
     {
         var lines = new List<string>();
-        var host = new SimHost(PartyRole.MeleeDpsA, strat: 2, seed: 1, godMode: true);
+        var host = new SimHost(PartyRole.MeleeDpsA, strat: DefaultStrat, seed: 1, godMode: true);
         var start = host.Player!.Position;
         for (var frame = 0; frame < 60; frame++) host.Advance(SimHost.Step, new Vector2(1f, 0f));
         var walked = host.Player.Position - start;
@@ -43,7 +44,7 @@ internal static class Program
     // to a PNG, so drawing can be checked without anyone looking at the window.
     private static int Snapshot(string pngPath, float seconds, int seed)
     {
-        var host = new SimHost(PartyRole.MeleeDpsA, strat: 2, seed, godMode: true);
+        var host = new SimHost(PartyRole.MeleeDpsA, strat: DefaultStrat, seed, godMode: true);
         using var coach = new UI.Coach(host);
         for (var frame = 0; frame < MaxSelfTestFrames && host.Time < seconds; frame++)
         {

@@ -75,7 +75,7 @@ internal sealed class UmadP3BlackHoleCallouts
         ActionId.LongitudinalImplosion => new Callout("Sides => Front/Back", false),
         ActionId.LatitudinalImplosion => new Callout("Front/Back => Sides", false),
         ActionId.WhiteHole => new Callout("Heal to full", true),
-        ActionId.BlizzardIII_Cast => new Callout("Bait puddles x2", false),
+        ActionId.BlizzardIII_Cast => new Callout(state.ScenarioObjects.CentreBlizzardBait ? "Bait middle => Out to corners" : "Bait puddles x2", false),
         ActionId.KnockDown_Cast => new Callout(StacksFirst(state, role) ? "Stack middle => Towers" : "Towers => Stack middle", false),
         ActionId.BlizzardIII_Raidwide => new Callout("Keep moving", false),
         _ => null,

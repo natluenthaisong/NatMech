@@ -34,6 +34,9 @@ public sealed class UmadP3BlackHoleScenarioObjects
     // Written by the strat for every seat, read by the on-screen guide for the local player.
     public Dictionary<SimCharacter, TetherGuide> TetherGuides { get; } = new();
 
+    // Set by the strat: the whole party baits the first Blizzard III in the dead centre.
+    public bool CentreBlizzardBait { get; set; }
+
     private static float ClockwiseFrom(float north, Vector3 p)
     {
         var d = (MathF.Atan2(p.X, -p.Z) - north) % MathF.Tau;

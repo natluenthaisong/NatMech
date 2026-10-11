@@ -126,15 +126,17 @@ internal sealed class Coach : IDisposable
         if (host.State is not { } state || host.Player is not { } player) return;
         var objects = state.ScenarioObjects;
         if (!objects.TetherGuides.TryGetValue(player, out var mine)) return;
+        var anyLeft = false;
         foreach (var tether in objects.Tethers)
         {
             if (tether.A is not { } hole || !mine.Holes.Contains(hole)) continue;
             var held = ReferenceEquals(tether.B, player);
             if (!held && UmadP3BlackHoleCallouts.HandedOn(objects, player, mine, hole)) continue;
+            anyLeft = true;
             using var pen = new Pen(held ? HeldColour : TakeColour, 3f) { DashStyle = held ? DashStyle.Solid : DashStyle.Dash };
             arena.DrawCircle(g, pen, hole.Position, 2f);
         }
-        if (mine.HoldAt is { } spot)
+        if (anyLeft && mine.HoldAt is { } spot)
         {
             using var pen = new Pen(SpotColour, 2.5f);
             arena.DrawCircle(g, pen, spot, 1.5f);

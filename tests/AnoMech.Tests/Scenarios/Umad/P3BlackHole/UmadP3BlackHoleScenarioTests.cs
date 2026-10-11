@@ -74,11 +74,12 @@ public class UmadP3BlackHoleScenarioTests
             .ShouldKill(ActionId.SlapHappy_FinalSlap, MeleeDpsA);
 
     [Test]
-    public void DoubleTethersIsTheDefaultStrat()
+    public void DoubleTethersWithStompCentreBaitIsTheDefaultStrat()
     {
         var scenario = new UmadP3BlackHoleScenario();
-        Assert.That(((UmadP3BlackHoleAi)scenario.AiStrats[scenario.DefaultAi]).Order,
-            Is.EqualTo(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers));
+        var strat = (UmadP3BlackHoleAi)scenario.AiStrats[scenario.DefaultAi];
+        Assert.That(strat.Order, Is.EqualTo(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers));
+        Assert.That(strat.CentreBlizzardBait, Is.True);
     }
 
     [Test]

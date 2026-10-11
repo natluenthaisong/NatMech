@@ -9,17 +9,19 @@ using static AnoMech.Scenarios.Umad.UmadConstants;
 
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
 
-public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder) : IScenarioAi<UmadP3BlackHoleState>
+public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder, bool centreBlizzardBait = false)
+    : IScenarioAi<UmadP3BlackHoleState>
 {
     public enum TetherOrder { DpsSupportAccretion, SupportDpsAccretion, DpsSupportAccretionDoubleTethers }
     public TetherOrder Order => tetherOrder;
+    public bool CentreBlizzardBait => centreBlizzardBait;
 
-    public string Name => tetherOrder switch
+    public string Name => (tetherOrder switch
     {
         TetherOrder.SupportDpsAccretion => "Black Hole: S>D>A",
         TetherOrder.DpsSupportAccretionDoubleTethers => "Black Hole: D>S>A double tethers",
         _ => "Black Hole: D>S>A",
-    };
+    }) + (centreBlizzardBait ? ", Stomp centre bait" : "");
 
     private bool DoubleTethers => tetherOrder == TetherOrder.DpsSupportAccretionDoubleTethers;
 
@@ -42,6 +44,7 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         pulledDoubleTethers.Clear();
         implosionChaos = null;
         implosionSpots = null;
+        state.ScenarioObjects.CentreBlizzardBait = centreBlizzardBait;
         var ai = new AiManager(world);
 
         // Kept here so a peer's debug-bot replay gets it from the same Run.
@@ -123,7 +126,7 @@ public sealed class UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder tetherOrder)
         ai.Move(134f, () => DodgeLookUponSplitOthers(tetherPlayerIndex: lastTetherHolder, lookKefkaIndex: 4), sprint: true);
         ai.Move(134.5f, () => DodgeLookUponSplitHolder(tetherPlayerIndex: lastTetherHolder, lookKefkaIndex: 4, leaveWithoutTether: false), sprint: true);
         ai.Move(135f, () => DodgeLookUponSplitHolder(tetherPlayerIndex: lastTetherHolder, lookKefkaIndex: 4, leaveWithoutTether: true), sprint: true);
-        ai.Move(139f, PrepositionForStomp);
+        ai.Move(139f, centreBlizzardBait ? StackCentre : PrepositionForStomp);
         ai.Move(147f, StompBlizzardCorners);
         ai.Move(149.8f, StompStackAndTowers);
         ai.Move(152.4f, StompSwapWest);

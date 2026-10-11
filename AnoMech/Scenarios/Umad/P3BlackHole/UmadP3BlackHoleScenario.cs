@@ -64,10 +64,13 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretion),
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.SupportDpsAccretion),
         new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers),
+        new UmadP3BlackHoleAi(UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers, centreBlizzardBait: true),
     ];
 
-    public int DefaultAi => AiStrats.ToList().FindIndex(s =>
-        ((UmadP3BlackHoleAi)s).Order == UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers);
+    public int DefaultAi => AiStrats.ToList().FindIndex(s => s is UmadP3BlackHoleAi
+    {
+        Order: UmadP3BlackHoleAi.TetherOrder.DpsSupportAccretionDoubleTethers, CentreBlizzardBait: true,
+    });
 
     private UmadP3BlackHoleState state = null!;
     private SimWorld world = null!;
