@@ -27,13 +27,15 @@ public sealed class UmadP3BlackHoleSettingsWindow
             return;
         }
 #endif
-        if (ImGui.Button("Auto"))
+        Section("Your debuffs");
+        if (ImGui.SmallButton("Reset to random"))
         {
 #if DEBUG
             Overrides.SlapAttacks[0] = null;
 #endif
             if (solo) ResetMine();
         }
+        Tooltip("Auto rolls a new line and Accretion every run, as the real fight does.");
         if (SettingsGrid.Begin("##umadp3blackhole"))
         {
             if (solo)
@@ -117,97 +119,66 @@ public sealed class UmadP3BlackHoleSettingsWindow
 #endif
 
     // Drawn from the scenario's DrawMultiplayerSettings so it stays editable while Multiplayer is open.
+    // Viewer preferences live in the plugin config and are never broadcast; only the host's count.
     public void DrawMultiplayerSettings()
     {
-        // Only the host's settings are read.
         var mpGuest = Plugin.MultiplayerInstance is { IsConnected: true, IsHost: false };
-        DrawTetherGuideToggle(mpGuest);
-        DrawCalloutToggles(mpGuest);
-        DrawAutomarkersToggle(mpGuest);
-        ImGui.Separator();
-        DrawThunderIIIPlan(mpGuest);
+        if (mpGuest) ImGui.TextDisabled("Guides, callouts and plans follow the host's settings.");
+        ImGui.BeginDisabled(mpGuest);
+        DrawGuides();
+        DrawCallouts();
+        DrawParty();
+        DrawThunderIIIPlan();
+        ImGui.EndDisabled();
     }
 
-    // A viewer preference, not a fight setting: saved in the plugin config, never broadcast.
-    private static void DrawTetherGuideToggle(bool mpGuest)
+    private static void DrawGuides()
     {
-        var show = Plugin.Config.ShowBlackHoleTetherGuide;
-        ImGui.BeginDisabled(mpGuest);
-        if (ImGui.Checkbox("Black Hole tether guide (on-screen drawing)", ref show))
-        {
-            Plugin.Config.ShowBlackHoleTetherGuide = show;
-            Plugin.Config.Save();
-        }
-        ImGui.EndDisabled();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(mpGuest
-                ? "Drawn from the strat, which only runs solo or on the host."
-                : "Highlights the tether(s) the selected strat gives you, a line to where to step onto the beam, and the spot to hold it. Needs a strat selected.");
-
-        var spot = Plugin.Config.ShowBlackHoleSpotHint;
-        ImGui.BeginDisabled(mpGuest);
-        if (ImGui.Checkbox("Black Hole safe/stack spot (on-screen drawing)", ref spot))
-        {
-            Plugin.Config.ShowBlackHoleSpotHint = spot;
-            Plugin.Config.Save();
-        }
-        ImGui.EndDisabled();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(mpGuest
-                ? "Drawn from the strat, which only runs solo or on the host."
-                : "Marks where the selected strat sends your seat for each mechanic (Slap Happy, Edict, Look upon Me, Thunder, implosion, Stomp-a-Mole towers, back to the stack), with a line to it. Labelled Stack when teammates go there too, Safe spot otherwise.");
-
-        var markers = Plugin.Config.BlackHoleGameMarkers;
-        ImGui.BeginDisabled(mpGuest);
-        if (ImGui.Checkbox("Draw them with the game's own floor markers", ref markers))
-        {
-            Plugin.Config.BlackHoleGameMarkers = markers;
-            Plugin.Config.Save();
-        }
-        ImGui.EndDisabled();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("On: drawn on the floor with the game's own pieces, like a real marker: a friendly-coloured circle for each spot, a PlayStation marker floating over it (circle = safe spot, triangle = stack, square = tether hold spot) and Dancing Mad P1's glowing arrows pointing the way to it. No text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
-
-        var rainbow = Plugin.Config.BlackHoleRainbowMarkers;
-        var brightness = Plugin.Config.BlackHoleMarkerBrightness;
-        ImGui.BeginDisabled(mpGuest || !markers);
-        if (ImGui.Checkbox("Rainbow", ref rainbow))
-        {
-            Plugin.Config.BlackHoleRainbowMarkers = rainbow;
-            Plugin.Config.Save();
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Cycles the floor circles through the rainbow so they can't be mistaken for an attack.");
+        Section("Guides");
+        ConfigCheckbox("Where to go (safe / stack spot)", Plugin.Config.ShowBlackHoleSpotHint, v => Plugin.Config.ShowBlackHoleSpotHint = v,
+            "Marks where the selected strategy sends you for each mechanic: Slap Happy, Edict, Look upon Me, Thunder, implosion, Stomp-a-Mole towers, and back to the stack.");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(120f);
-        ImGui.BeginDisabled(!rainbow);
-        if (ImGui.SliderFloat("Brightness", ref brightness, 0.5f, 5f, "%.1f"))
-        {
-            Plugin.Config.BlackHoleMarkerBrightness = brightness;
-            Plugin.Config.Save();
-        }
-        ImGui.EndDisabled();
+        ConfigCheckbox("Your tethers", Plugin.Config.ShowBlackHoleTetherGuide, v => Plugin.Config.ShowBlackHoleTetherGuide = v,
+            "Which black hole tether(s) the strategy gives you, where to step onto the beam, and where to hold it.");
+        if (!Plugin.Config.ShowBlackHoleSpotHint && !Plugin.Config.ShowBlackHoleTetherGuide) return;
 
-        var tetherIndex = Array.FindIndex(SpotTethers, t => t.Id == Plugin.Config.BlackHoleSpotTether);
-        if (tetherIndex < 0) tetherIndex = 0;
-        ImGui.SetNextItemWidth(180f);
-        if (ImGui.Combo("Tether to your spot", ref tetherIndex, SpotTethers.Select(t => t.Name).ToArray(), SpotTethers.Length))
-        {
-            Plugin.Config.BlackHoleSpotTether = SpotTethers[tetherIndex].Id;
-            Plugin.Config.Save();
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("A game tether from you to the marker over your spot, gone once you're there.");
+        var floor = Plugin.Config.BlackHoleGameMarkers;
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Style:");
         ImGui.SameLine();
-        var reversed = Plugin.Config.BlackHoleSpotTetherReversed;
-        if (ImGui.Checkbox("Reverse", ref reversed))
+        if (ImGui.RadioButton("In-game markers", floor)) SetConfig(() => Plugin.Config.BlackHoleGameMarkers = true);
+        Tooltip("Drawn with the game's own pieces, so it looks like part of the fight: a circle on your spot, a PlayStation symbol above it, glowing arrows and a tether leading you there.");
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Overlay", !floor)) SetConfig(() => Plugin.Config.BlackHoleGameMarkers = false);
+        Tooltip("Coloured lines, circles and text labels drawn over the screen.");
+        if (!floor) return;
+
+        ImGui.Indent();
+        ImGui.TextDisabled("Above your spot:  O safe spot   /\\ stack   [] hold your tether");
+
+        var tetherIndex = Math.Max(0, Array.FindIndex(SpotTethers, t => t.Id == Plugin.Config.BlackHoleSpotTether));
+        ImGui.SetNextItemWidth(160f);
+        if (ImGui.Combo("Tether to your spot", ref tetherIndex, SpotTetherNames, SpotTetherNames.Length))
+            SetConfig(() => Plugin.Config.BlackHoleSpotTether = SpotTethers[tetherIndex].Id);
+        Tooltip("A game tether from you to your spot; it goes away once you're there.");
+        if (Plugin.Config.BlackHoleSpotTether != 0)
         {
-            Plugin.Config.BlackHoleSpotTetherReversed = reversed;
-            Plugin.Config.Save();
+            ImGui.SameLine();
+            ConfigCheckbox("Flip", Plugin.Config.BlackHoleSpotTetherReversed, v => Plugin.Config.BlackHoleSpotTetherReversed = v,
+                "Tick if the tether's arrows point away from your spot.");
         }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Runs the tether the other way round, for one whose arrows point away from the spot.");
-        ImGui.EndDisabled();
+
+        ConfigCheckbox("Rainbow circle", Plugin.Config.BlackHoleRainbowMarkers, v => Plugin.Config.BlackHoleRainbowMarkers = v,
+            "Cycles the spot circle through the rainbow so it can't be mistaken for an attack.");
+        if (Plugin.Config.BlackHoleRainbowMarkers)
+        {
+            ImGui.SameLine();
+            var brightness = Plugin.Config.BlackHoleMarkerBrightness;
+            ImGui.SetNextItemWidth(110f);
+            if (ImGui.SliderFloat("Brightness", ref brightness, 0.5f, 5f, "%.1f"))
+                SetConfig(() => Plugin.Config.BlackHoleMarkerBrightness = brightness);
+        }
+        ImGui.Unindent();
     }
 
     private static readonly (string Name, ushort Id)[] SpotTethers =
@@ -222,88 +193,90 @@ public sealed class UmadP3BlackHoleSettingsWindow
         ("Plain", UmadConstants.TetherId.Plain),
     ];
 
-    private static void DrawCalloutToggles(bool mpGuest)
+    private static readonly string[] SpotTetherNames = SpotTethers.Select(t => t.Name).ToArray();
+
+    private static void DrawCallouts()
     {
-        var callouts = Plugin.Config.BlackHoleCallouts;
-        var speak = Plugin.Config.SpeakBlackHoleCallouts;
-        ImGui.BeginDisabled(mpGuest);
-        if (ImGui.Checkbox("Black Hole callouts", ref callouts))
-        {
-            Plugin.Config.BlackHoleCallouts = callouts;
-            Plugin.Config.Save();
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(mpGuest
-                ? "Called from the strat, which only runs solo or on the host."
-                : "Cactbot-style calls on screen: your line number, Slap Happy, Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your tether jobs from the selected strat (Get North tether, Get both tethers, Pass tether).");
+        Section("Callouts");
+        ConfigCheckbox("Show on screen", Plugin.Config.BlackHoleCallouts, v => Plugin.Config.BlackHoleCallouts = v,
+            "Cactbot-style calls: your line number, Slap Happy, Thunder III, Damning Edict, Look upon Me, Lat/Long implosion, White Hole, Stomp-a-Mole, and your tether jobs.");
         ImGui.SameLine();
-        ImGui.BeginDisabled(!callouts);
-        if (ImGui.Checkbox("Speak them", ref speak))
-        {
-            Plugin.Config.SpeakBlackHoleCallouts = speak;
-            Plugin.Config.Save();
-        }
-        ImGui.EndDisabled();
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Reads each callout aloud with the Windows voice (Settings > Time & language > Speech).");
+        ImGui.BeginDisabled(!Plugin.Config.BlackHoleCallouts);
+        ConfigCheckbox("Read aloud", Plugin.Config.SpeakBlackHoleCallouts, v => Plugin.Config.SpeakBlackHoleCallouts = v,
+            "Speaks each call with the Windows voice (Settings > Time & language > Speech).");
         ImGui.EndDisabled();
     }
 
-    private void DrawAutomarkersToggle(bool mpGuest)
+    private void DrawParty()
     {
+        Section("Party");
         var automarkers = Overrides.Automarkers;
-        if (mpGuest)
-            ImGui.TextDisabled("Black Hole automarkers: host setting");
-        else if (ImGui.Checkbox("Black Hole automarkers", ref automarkers))
-            Overrides.Automarkers = automarkers;
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(mpGuest
-                ? "The host controls automarkers for everyone."
-                : "First line: Attack 1-3. Second line: Bind 1-3. Third line: Ignore 1-2. Accretion is last; DPS/support priority follows the strategy. Applies next run.");
+        if (ImGui.Checkbox("Automarkers", ref automarkers)) Overrides.Automarkers = automarkers;
+        Tooltip("Marks everyone by tether order: first line Attack 1-3, second line Bind 1-3, third line Ignore 1-2. Applies from the next run.");
     }
 
     // Only matters when a tank slot is bot-driven. Two rows: the sim casts Thunder III twice.
-    private void DrawThunderIIIPlan(bool mpGuest)
+    private void DrawThunderIIIPlan()
     {
-        ImGui.TextUnformatted("Thunder III plan (planning tank bots will follow):");
-        ImGui.BeginDisabled(mpGuest);
-        DrawThunderIIIRow("##thunder1", "Set 1 (~42.6s):", Overrides.ThunderSet1, Overrides.ThunderSet2, v => Overrides.ThunderSet1 = v);
-        DrawThunderIIIRow("##thunder2", "Set 2 (~83.9s):", Overrides.ThunderSet2, Overrides.ThunderSet1, v => Overrides.ThunderSet2 = v);
-        ImGui.EndDisabled();
-        if (mpGuest && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Only the host's plan is used in multiplayer.");
+        Section("Thunder III tank plan");
+        ImGui.TextDisabled("What bot tanks do for each tank buster.");
+        DrawThunderIIICombo("1st (~43s)##thunder1", Overrides.ThunderSet1, Overrides.ThunderSet2, v => Overrides.ThunderSet1 = v);
+        ImGui.SameLine();
+        DrawThunderIIICombo("2nd (~84s)##thunder2", Overrides.ThunderSet2, Overrides.ThunderSet1, v => Overrides.ThunderSet2 = v);
     }
 
-    private static void DrawThunderIIIRow(string idSuffix, string label, ThunderIIIAssignment current, ThunderIIIAssignment otherSet, Action<ThunderIIIAssignment> set)
-    {
-        ImGui.TextUnformatted(label);
-        ImGui.SameLine();
-        DrawThunderIIIOption("MT invulns both" + idSuffix, ThunderIIIAssignment.MtInvulnsBoth, current, otherSet, set);
-        ImGui.SameLine();
-        DrawThunderIIIOption("OT invulns both" + idSuffix, ThunderIIIAssignment.OtInvulnsBoth, current, otherSet, set);
-        ImGui.SameLine();
-        DrawThunderIIIOption("Share, MT first" + idSuffix, ThunderIIIAssignment.ShareMtFirst, current, otherSet, set);
-        ImGui.SameLine();
-        DrawThunderIIIOption("Share, OT first" + idSuffix, ThunderIIIAssignment.ShareOtFirst, current, otherSet, set);
-    }
+    private static readonly (ThunderIIIAssignment Plan, string Name)[] ThunderIIIPlans =
+    [
+        (ThunderIIIAssignment.MtInvulnsBoth, "MT invulns both"),
+        (ThunderIIIAssignment.OtInvulnsBoth, "OT invulns both"),
+        (ThunderIIIAssignment.ShareMtFirst, "Share, MT first"),
+        (ThunderIIIAssignment.ShareOtFirst, "Share, OT first"),
+    ];
 
     // Invuln and Share are separate pools: neither an invuln nor the big self-mit cooldowns
     // recover in the ~41s between sets.
-    private static void DrawThunderIIIOption(string label, ThunderIIIAssignment option, ThunderIIIAssignment current, ThunderIIIAssignment otherSet, Action<ThunderIIIAssignment> set)
+    private static void DrawThunderIIICombo(string label, ThunderIIIAssignment current, ThunderIIIAssignment otherSet, Action<ThunderIIIAssignment> set)
     {
-        var isShare = option is ThunderIIIAssignment.ShareMtFirst or ThunderIIIAssignment.ShareOtFirst;
+        ImGui.SetNextItemWidth(140f);
+        if (!ImGui.BeginCombo(label, ThunderIIIPlans.First(p => p.Plan == current).Name)) return;
         var otherIsShare = otherSet is ThunderIIIAssignment.ShareMtFirst or ThunderIIIAssignment.ShareOtFirst;
-        var blocked = isShare ? otherIsShare : option == otherSet;
-        if (blocked) ImGui.BeginDisabled();
-        if (ImGui.RadioButton(label, current == option) && !blocked) set(option);
-        if (blocked)
+        foreach (var (plan, name) in ThunderIIIPlans)
         {
-            ImGui.EndDisabled();
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip(isShare
-                    ? "Both tanks already shared the other set -- their own mitigation kit's big cooldowns (120s/90s) can't recover in ~41s, so neither can reach the required mitigation again."
-                    : "That tank already invulns the other set -- no tank invuln recovers in ~41s, so they can't do both.");
+            var isShare = plan is ThunderIIIAssignment.ShareMtFirst or ThunderIIIAssignment.ShareOtFirst;
+            var blocked = isShare ? otherIsShare : plan == otherSet;
+            if (ImGui.Selectable(name, plan == current, blocked ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None)) set(plan);
+            if (blocked)
+                Tooltip(isShare
+                    ? "The tanks already share the other buster; their big cooldowns can't come back in ~41s."
+                    : "That tank already invulns the other buster; no invuln comes back in ~41s.");
         }
+        ImGui.EndCombo();
+    }
+
+    private static void ConfigCheckbox(string label, bool value, Action<bool> set, string tooltip)
+    {
+        if (ImGui.Checkbox(label, ref value)) SetConfig(() => set(value));
+        Tooltip(tooltip);
+    }
+
+    private static void SetConfig(Action change)
+    {
+        change();
+        Plugin.Config.Save();
+    }
+
+    private static readonly System.Numerics.Vector4 SectionColour = new(0.55f, 0.8f, 1f, 1f);
+
+    private static void Section(string title)
+    {
+        ImGui.Spacing();
+        ImGui.TextColored(SectionColour, title);
+        ImGui.Separator();
+    }
+
+    private static void Tooltip(string text)
+    {
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetTooltip(text);
     }
 
     private void ResetPerPlayer()
