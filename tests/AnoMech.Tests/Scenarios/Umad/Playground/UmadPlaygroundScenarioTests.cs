@@ -91,4 +91,29 @@ public class UmadPlaygroundScenarioTests
         var south = UmadPlaygroundScenario.LandingFrom(7);
         Assert.That(Vector2.Distance(new(south.X, south.Z), new(0f, 13f)), Is.LessThan(1e-3f), "the last arrow sends you round to the first");
     }
+
+    private static int Catches(Vector2 standAt)
+    {
+        var catches = 0;
+        ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
+        {
+            PlayerRole = Me,
+            StopAt = 25f,
+            WriteArtifactsOnFailure = false,
+            Takeovers = [new Takeover(1.5f, standAt)],
+            Probe = p =>
+            {
+                p.Game.GodMode = true;
+                catches = ((UmadPlaygroundScenario)p.Game.ActiveScenario!).Catches;
+            },
+        });
+        return catches;
+    }
+
+    [Test]
+    public void ExdeathNeverCatchesYouOnTheMerryGoRound()
+    {
+        Assert.That(Catches(new Vector2(0f, 13f)), Is.Zero, "standing on the south arrow");
+        Assert.That(Catches(new Vector2(0f, 8f)), Is.Positive, "off the ring he does");
+    }
 }

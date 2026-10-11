@@ -12,7 +12,7 @@ namespace AnoMech.Scenarios.Umad.Playground;
 
 // Not a fight: a toy built from Dancing Mad's pieces. P1's Tele-portent arrows stand in a ring around
 // Chaos, each pointing at the next and launching you onto it, so you can ride the merry-go-round arrow
-// to arrow; Exdeath walks you down, faster as time goes on; Chaos beams the spot you stood on a
+// to arrow, out of Exdeath's reach while you ride; Exdeath walks you down, faster as time goes on; Chaos beams the spot you stood on a
 // moment ago. It runs until you drop, then reports how long you
 // lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
@@ -54,6 +54,8 @@ public sealed class UmadPlaygroundScenario : IScenario
     private float launchCooldown;
     private float catchCooldown;
     private int launches;
+    // Caught by Exdeath, or would have been in god mode.
+    internal int Catches { get; private set; }
     private int beamsDodged;
     private bool over;
 
@@ -66,6 +68,7 @@ public sealed class UmadPlaygroundScenario : IScenario
         launchCooldown = 0f;
         catchCooldown = 0f;
         launches = 0;
+        Catches = 0;
         beamsDodged = 0;
         over = false;
 
@@ -159,11 +162,18 @@ public sealed class UmadPlaygroundScenario : IScenario
         var speed = MathF.Min(ExdeathTopSpeed, ExdeathStartSpeed + (elapsed - ExdeathStart) * ExdeathSpeedUpPerSecond);
         exdeath.Follow(player, speed);
         if (catchCooldown > 0f) { catchCooldown -= delta; return; }
+        if (Riding(player)) return;
         var reach = exdeath.HitboxRadius + player.HitboxRadius + CatchMargin;
         if (Vector2.Distance(Flat(exdeath.Position), Flat(player.Position)) > reach) return;
         catchCooldown = CatchCooldown;
+        Catches++;
         player.Die(ActionId.DeathBomb, "Exdeath caught you");
     }
+
+    // In the air from a launch, or standing on an arrow: the merry-go-round is safe from Exdeath.
+    private bool Riding(SimCharacter player) =>
+        launchCooldown > 0f
+        || Enumerable.Range(0, ArrowCount).Any(i => Vector2.Distance(Flat(player.Position), Flat(RingPoint(i))) <= ArrowTriggerRadius);
 
     // A chain of events rather than a Tick timer: the run counts as over once the timeline runs dry.
     private void FireBeam()
