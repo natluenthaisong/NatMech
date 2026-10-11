@@ -170,7 +170,9 @@ public sealed partial class MultiplayerManager
                 PersistentVfxForPeers(enemy, who)));
         }
 
-        var liveTethers = world.Children.OfType<SimTether>().Where(t => t.IsActive).ToList();
+        var liveTethers = world.Children.OfType<SimTether>()
+            .Where(t => t.IsActive && t.A is not SimEnemy { SpawnConfig.LocalOnly: true } && t.B is not SimEnemy { SpawnConfig.LocalOnly: true })
+            .ToList();
         foreach (var stale in hostTetherNetIds.Keys.Where(t => !liveTethers.Contains(t)).ToList())
         {
             DiagnosticLog.Debug($"[Multiplayer] Host: tether NetId {hostTetherNetIds[stale]} no longer active -- dropping from broadcast.");

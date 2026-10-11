@@ -291,6 +291,15 @@ public static class UmadConstants
     {
         public const ushort GravenImage  = (ushort)0x2D;
         public const ushort GrabbyTether = (ushort)0x54;
+        // Channeling rows offered for Black Hole's tether to your spot.
+        public const ushort Closer      = 130; // chn_closer_0v
+        public const ushort CloserClear = 377; // chn_closer_clear01h
+        public const ushort Arrow1      = 57;  // chn_arrow01f
+        public const ushort Arrow2      = 184; // chn_arrow02c
+        public const ushort Arrow3      = 185; // chn_arrow03c
+        public const ushort Arrow4      = 235; // chn_arrow04k1
+        public const ushort Light       = 2;   // chn_light01f
+        public const ushort Plain       = 12;  // chn_nomal01f
     }
 
     public static class KnockbackId

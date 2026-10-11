@@ -20,6 +20,9 @@ public class Configuration : IPluginConfiguration
     public bool BlackHoleGameMarkers { get; set; } = true;
     public bool BlackHoleRainbowMarkers { get; set; } = true;
     public float BlackHoleMarkerBrightness { get; set; } = 2f;
+    // Channeling row for the tether from you to your spot; 0 = none.
+    public ushort BlackHoleSpotTether { get; set; } = 130;
+    public bool BlackHoleSpotTetherReversed { get; set; } = false;
     public bool BlackHoleCallouts { get; set; } = true;
     public bool SpeakBlackHoleCallouts { get; set; } = false;
     public bool AutoCollapseWhileRunning { get; set; } = false;

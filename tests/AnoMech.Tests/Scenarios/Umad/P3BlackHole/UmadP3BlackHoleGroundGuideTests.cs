@@ -1,6 +1,7 @@
 using System.Numerics;
 using AnoMech.Core;
 using AnoMech.Core.Game;
+using AnoMech.Core.Game.Party;
 using AnoMech.Core.Native.Interfaces;
 using AnoMech.Core.SimObjects;
 using AnoMech.Scenarios.Umad;
@@ -148,5 +149,39 @@ public class UmadP3BlackHoleGroundGuideTests
 
         guide.Show([]);
         Assert.That(Beacons(world), Is.Empty);
+    }
+
+    private static List<SimTether> Tethers(SimWorld world) =>
+        world.Children.OfType<SimTether>().Where(t => t.IsActive).ToList();
+
+    [Test]
+    public void TheSpotTetherRunsFromTheBeaconToYouAndTurnsClearOnArrival()
+    {
+        var (world, _, guide) = Setup();
+        using var _ = world;
+        world.CreateParty(19, PartyRole.MainTank);
+        var player = world.Party.Player!;
+        var far = new Vector3(player.Position.X + 10f, 0f, player.Position.Z);
+        GuideShape[] beacon = [new GuideBeacon(far, UmadConstants.LockonId.PlaystationCircle)];
+        guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer);
+        Assert.That(Tethers(world), Is.Empty, "waits for the helper to exist, like the marker");
+        for (var frame = 0; frame < 20; frame++) guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer);
+        var tether = Tethers(world).Single();
+        Assert.That(tether.TetherId, Is.EqualTo(UmadConstants.TetherId.Closer));
+        Assert.That(tether.A, Is.SameAs(Beacons(world).Single()));
+        Assert.That(tether.B, Is.SameAs(player));
+
+        guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer, reverseTether: true);
+        Assert.That(Tethers(world).Single().A, Is.SameAs(player), "reversed");
+
+        player.SetPosition(far);
+        guide.Show(beacon, spotTether: UmadConstants.TetherId.Closer);
+        Assert.That(Tethers(world).Single().TetherId, Is.EqualTo(UmadConstants.TetherId.CloserClear), "arrived");
+
+        guide.Show(beacon, spotTether: 0);
+        Assert.That(Tethers(world), Is.Empty, "None turns it off");
+        guide.Show(beacon, spotTether: UmadConstants.TetherId.Arrow1);
+        guide.Show([], spotTether: UmadConstants.TetherId.Arrow1);
+        Assert.That(Tethers(world), Is.Empty, "goes with the beacon");
     }
 }

@@ -95,7 +95,8 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
     private int arrowsSpawned;
 
     // tint: multiplies the omens' own colours (see Rainbow); null keeps them as the game draws them.
-    public void Show(IEnumerable<GuideShape> shapes, Vector4? tint = null)
+    // spotTether: Channeling row for a tether from you to the beacon, 0 for none.
+    public void Show(IEnumerable<GuideShape> shapes, Vector4? tint = null, ushort spotTether = 0, bool reverseTether = false)
     {
         var colour = tint ?? Vector4.One;
         int ringCount = 0, lineCount = 0;
@@ -121,30 +122,37 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
         }
         for (var i = ringCount; i < rings.Count; i++) rings[i].Hide();
         for (var i = lineCount; i < trails.Count; i++) trails[i].Clear();
-        beacon.Show(wantedBeacon);
+        beacon.Show(wantedBeacon, spotTether, reverseTether);
     }
 
     public void Clear()
     {
         foreach (var marker in rings) marker.Hide();
         foreach (var trail in trails) trail.Clear();
-        beacon.Show(null);
+        beacon.Show(null, 0, false);
     }
 
     // An invisible helper standing on the spot wears the head marker: head markers only attach to
     // characters. A new symbol gets a new helper, since a second marker on one actor may not replace
-    // the first; a spot that moves just moves the helper, and the marker goes with it.
+    // the first; a spot that moves just moves the helper, and the marker goes with it. The helper is
+    // also the far end of the tether to you; a beam's visual lives on its source end, so neither way
+    // round touches the slot of a Black Hole tether you hold (the hole is that one's source).
     private sealed class Beacon(SimWorld world)
     {
-        // The engine creates the actor a few frames after the spawn; a marker sent before that is lost.
+        // The engine creates the actor a few frames after the spawn; a marker or tether sent before
+        // that is lost.
         private const int FramesBeforeMarker = 15;
         private const float MoveTolerance = 0.3f;
+        // Within this of the spot, Closer turns into its "close enough" version.
+        private const float ArrivedRadius = UmadP3BlackHoleSpotHint.SpotRadius + 0.5f;
 
         private SimEnemy? helper;
         private uint lockonId;
         private int framesUntilMarker;
+        private SimTether? tether;
+        private (ushort Id, bool Reversed) tetherShown;
 
-        public void Show(GuideBeacon? wanted)
+        public void Show(GuideBeacon? wanted, ushort spotTether, bool reverseTether)
         {
             if (wanted is null) { Despawn(); return; }
             if (helper is null || !helper.IsActive || wanted.LockonId != lockonId)
@@ -160,10 +168,32 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
             }
             if (Vector3.Distance(helper.Position, wanted.At) > MoveTolerance) helper.SetPosition(wanted.At);
             if (framesUntilMarker > 0 && --framesUntilMarker == 0) helper.AttachLockonVfx(lockonId);
+            if (framesUntilMarker == 0) ShowTether(helper, spotTether, reverseTether);
+        }
+
+        private void ShowTether(SimEnemy spot, ushort id, bool reversed)
+        {
+            var player = world.Party.Player;
+            if (player is null || !player.IsAlive()) id = 0;
+            else if (id == UmadConstants.TetherId.Closer
+                     && Vector2.Distance(new(player.Position.X, player.Position.Z), new(spot.Position.X, spot.Position.Z)) <= ArrivedRadius)
+                id = UmadConstants.TetherId.CloserClear;
+            if (tether is { IsActive: true } && tetherShown == (id, reversed)) return;
+            ClearTether();
+            if (id == 0) return;
+            tether = reversed ? world.Tether(player, spot, id) : world.Tether(spot, player, id);
+            tetherShown = (id, reversed);
+        }
+
+        private void ClearTether()
+        {
+            tether?.Despawn();
+            tether = null;
         }
 
         private void Despawn()
         {
+            ClearTether();
             helper?.Despawn();
             helper = null;
         }

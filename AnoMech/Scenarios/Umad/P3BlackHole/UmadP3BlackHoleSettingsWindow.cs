@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using AnoMech.Core.Game.Party;
 using Dalamud.Bindings.ImGui;
 using static AnoMech.Scenarios.Umad.UmadConstants;
@@ -186,8 +187,40 @@ public sealed class UmadP3BlackHoleSettingsWindow
             Plugin.Config.Save();
         }
         ImGui.EndDisabled();
+
+        var tetherIndex = Array.FindIndex(SpotTethers, t => t.Id == Plugin.Config.BlackHoleSpotTether);
+        if (tetherIndex < 0) tetherIndex = 0;
+        ImGui.SetNextItemWidth(180f);
+        if (ImGui.Combo("Tether to your spot", ref tetherIndex, SpotTethers.Select(t => t.Name).ToArray(), SpotTethers.Length))
+        {
+            Plugin.Config.BlackHoleSpotTether = SpotTethers[tetherIndex].Id;
+            Plugin.Config.Save();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("A game tether from you to the marker over your spot. Closer switches to its close-enough look once you're there.");
+        ImGui.SameLine();
+        var reversed = Plugin.Config.BlackHoleSpotTetherReversed;
+        if (ImGui.Checkbox("Reverse", ref reversed))
+        {
+            Plugin.Config.BlackHoleSpotTetherReversed = reversed;
+            Plugin.Config.Save();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("Runs the tether the other way round, for one whose arrows point away from the spot.");
         ImGui.EndDisabled();
     }
+
+    private static readonly (string Name, ushort Id)[] SpotTethers =
+    [
+        ("None", 0),
+        ("Closer (chevrons)", UmadConstants.TetherId.Closer),
+        ("Arrow 1", UmadConstants.TetherId.Arrow1),
+        ("Arrow 2", UmadConstants.TetherId.Arrow2),
+        ("Arrow 3", UmadConstants.TetherId.Arrow3),
+        ("Arrow 4", UmadConstants.TetherId.Arrow4),
+        ("Light", UmadConstants.TetherId.Light),
+        ("Plain", UmadConstants.TetherId.Plain),
+    ];
 
     private static void DrawCalloutToggles(bool mpGuest)
     {
