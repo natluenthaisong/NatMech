@@ -79,6 +79,9 @@ public static class UmadConstants
         public const int TelePortentArg2Serial = 0x50;
         // Clear of the statue props' 0x4000EB80-8A.
         public const uint TelePortentEntityIdBase = 0x4000EB90U;
+        // Black Hole's guide arrows reuse the Tele-portent prop; clear of P1's own arrows.
+        public const uint GuideArrowEntityIdBase = 0x4000EBC0U;
+        public const int GuideArrowArg2Serial = 0x70;
     }
 
     public static class ActionId

@@ -192,7 +192,7 @@ public sealed partial class MultiplayerManager
             tethers.Add(new TetherState(netId, tether.TetherId, aEnemy, aRole, bEnemy, bRole));
         }
 
-        var liveEventObjects = world.Children.OfType<SimEventObject>().Where(o => o.IsActive).ToList();
+        var liveEventObjects = world.Children.OfType<SimEventObject>().Where(o => o.IsActive && o.SpawnConfig is not { LocalOnly: true }).ToList();
         foreach (var stale in hostEventObjectNetIds.Keys.Where(o => !liveEventObjects.Contains(o)).ToList())
         {
             DiagnosticLog.Debug($"[Multiplayer] Host: event object NetId {hostEventObjectNetIds[stale]} (EObj 0x{stale.EObjRowId:X}) no longer active -- dropping from broadcast.");

@@ -61,6 +61,9 @@ public class EventObjectSpawnConfig
 
     // For a prop whose SGB has no timeline for that state (the teleporters).
     public ushort HideAtState { get; init; } = 0;
+
+    // A guide for this player alone: the multiplayer host doesn't broadcast it to peers.
+    public bool LocalOnly { get; init; } = false;
 }
 
 // Handle around an EventObject GameObject allocated via the manager's

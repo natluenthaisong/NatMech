@@ -73,7 +73,7 @@ public sealed class UmadP3BlackHoleScenario : IMultiplayerReplayable
         if (groundGuide is null) return;
         if (Plugin.Config is { BlackHoleGameMarkers: true } && LastState is { } s
             && Plugin.MultiplayerInstance is not { IsConnected: true, IsHost: false })
-            groundGuide.Show(GuideShapes(s), guideClock.Elapsed.TotalSeconds, Plugin.Config.BlackHoleRainbowMarkers
+            groundGuide.Show(GuideShapes(s), Plugin.Config.BlackHoleRainbowMarkers
                 ? UmadP3BlackHoleGroundGuide.Rainbow(guideClock.Elapsed.TotalSeconds, Plugin.Config.BlackHoleMarkerBrightness)
                 : null);
         else

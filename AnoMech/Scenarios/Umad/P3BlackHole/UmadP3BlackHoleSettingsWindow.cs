@@ -165,7 +165,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
         }
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("On: the guide and spot are drawn on the floor with the friendly-coloured versions of the game's telegraph circles and lines, like a real marker: hidden behind walls and characters, one colour, no text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
+            ImGui.SetTooltip("On: drawn on the floor with the game's own pieces, like a real marker: a friendly-coloured circle for each spot and Dancing Mad P1's glowing arrows pointing the way to it. No text. Off: drawn as a Dalamud overlay on top of the screen, in colour with labels.");
 
         var rainbow = Plugin.Config.BlackHoleRainbowMarkers;
         var brightness = Plugin.Config.BlackHoleMarkerBrightness;
@@ -176,7 +176,7 @@ public sealed class UmadP3BlackHoleSettingsWindow
             Plugin.Config.Save();
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Cycles the floor markers through the rainbow so they can't be mistaken for an attack.");
+            ImGui.SetTooltip("Cycles the floor circles through the rainbow so they can't be mistaken for an attack.");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(120f);
         ImGui.BeginDisabled(!rainbow);

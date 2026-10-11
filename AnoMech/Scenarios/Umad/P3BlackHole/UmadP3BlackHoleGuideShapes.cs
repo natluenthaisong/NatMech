@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using AnoMech.Core;
+using AnoMech.Core.Game;
 using AnoMech.Core.SimObjects;
 
 namespace AnoMech.Scenarios.Umad.P3BlackHole;
@@ -76,23 +78,20 @@ internal static class UmadP3BlackHoleGuideOverlay
     }
 }
 
-// The guides on the floor with the game's "ally" omens, the friendly-coloured twins of the circle
-// and line telegraphs, so they read as a marker rather than an attack. Markers are pooled and moved
-// each frame instead of respawned.
+// The guides on the floor with the game's own pieces: the "ally" omens (the friendly-coloured twins
+// of the circle telegraph) for spots, and Dancing Mad P1's Tele-portent arrows laid along each line,
+// pointing at its end. Nothing is moved once placed (a moved world VFX either restarts or stays
+// put), so a spot that changes is respawned and the arrows are re-laid only when the way to go turns.
 internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
 {
     private const string CirclePath = "vfx/omen/eff/general_1bpf.avfx";
-    private const string RectPath = "vfx/omen/eff/general02_pf.avfx";
-    private const float ArmHalfWidth = 0.2f;
-    private const float ThickLineHalfWidth = 0.3f;
-    private const float ShortestLine = 0.3f;
 
     private readonly List<SimGroundMarker> rings = new();
-    private readonly List<SimGroundMarker> lines = new();
+    private readonly List<ArrowTrail> trails = new();
+    private int arrowsSpawned;
 
     // tint: multiplies the omens' own colours (see Rainbow); null keeps them as the game draws them.
-    // seconds: drives the chevrons' slide.
-    public void Show(IEnumerable<GuideShape> shapes, double seconds, Vector4? tint = null)
+    public void Show(IEnumerable<GuideShape> shapes, Vector4? tint = null)
     {
         var colour = tint ?? Vector4.One;
         int ringCount = 0, lineCount = 0;
@@ -106,32 +105,89 @@ internal sealed class UmadP3BlackHoleGroundGuide(SimWorld world)
                     ringMarker.Tint(colour);
                     ringMarker.Place(ring.Centre, 0f, new Vector3(ring.Radius, 1f, ring.Radius));
                     break;
-                case GuideLine { Thick: true } beam:
-                    PlaceBar(Marker(lines, lineCount++, RectPath), beam.From, beam.To, ThickLineHalfWidth, colour);
-                    break;
                 case GuideLine line:
-                    foreach (var (back, tip) in GuideChevrons.Arms(line.From, line.To, seconds))
-                        PlaceBar(Marker(lines, lineCount++, RectPath), back, tip, ArmHalfWidth, colour);
+                    if (lineCount == trails.Count) trails.Add(new ArrowTrail(this));
+                    trails[lineCount++].Show(line.From, line.To);
                     break;
             }
         }
         for (var i = ringCount; i < rings.Count; i++) rings[i].Hide();
-        for (var i = lineCount; i < lines.Count; i++) lines[i].Hide();
-    }
-
-    private static void PlaceBar(SimGroundMarker marker, Vector3 from, Vector3 to, float halfWidth, Vector4 colour)
-    {
-        var along = to - from;
-        var length = new Vector2(along.X, along.Z).Length();
-        if (length < ShortestLine) { marker.Hide(); return; }
-        marker.Tint(colour);
-        marker.Place(from, MathF.Atan2(along.X, along.Z), new Vector3(halfWidth, 1f, length));
+        for (var i = lineCount; i < trails.Count; i++) trails[i].Clear();
     }
 
     public void Clear()
     {
         foreach (var marker in rings) marker.Hide();
-        foreach (var marker in lines) marker.Hide();
+        foreach (var trail in trails) trail.Clear();
+    }
+
+    private SimEventObject? SpawnArrow(Vector3 at, float heading)
+    {
+        var serial = arrowsSpawned++;
+        return world.SpawnEventObject(new EventObjectSpawnConfig
+        {
+            EObjId = UmadConstants.EObjId.TelePortent,
+            Placement = new Placement(at, heading),
+            EventId = UmadConstants.EObjId.PropEventId,
+            EntityId = UmadConstants.Spawn.GuideArrowEntityIdBase + (uint)(serial % 0x30),
+            Arg2 = ((uint)(UmadConstants.Spawn.GuideArrowArg2Serial + serial % 0x30) << 16) | 0x3U,
+            LocalOnly = true,
+        });
+    }
+
+    // Arrows counted back from the line's end, so walking straight at it only drops the ones behind
+    // you; a turn past TurnTolerance, or a new end, lays the trail again.
+    private sealed class ArrowTrail(UmadP3BlackHoleGroundGuide owner)
+    {
+        public const float Spacing = 5f;
+        public const float FirstBack = 2.5f;
+        private const int MaxArrows = 3;
+        private const float TurnTolerance = 15f * MathF.PI / 180f;
+        private const float EndTolerance = 0.5f;
+        // An arrow this close to (or behind) the player has been passed.
+        private const float PassedMargin = 1.5f;
+
+        private readonly List<SimEventObject?> arrows = new();
+        private Vector3 end;
+        private float heading;
+        private bool laid;
+
+        public void Show(Vector3 from, Vector3 to)
+        {
+            var along = new Vector3(to.X - from.X, 0f, to.Z - from.Z);
+            var length = along.Length();
+            if (length < FirstBack + PassedMargin) { Clear(); return; }
+            var newHeading = MathF.Atan2(along.X, along.Z);
+            if (!laid || Vector3.Distance(end, to) > EndTolerance
+                      || MathF.Abs(MathUtil.NormalizeRotation(newHeading - heading)) > TurnTolerance)
+            {
+                Clear();
+                end = to;
+                heading = newHeading;
+                laid = true;
+                var forward = new Vector3(MathF.Sin(heading), 0f, MathF.Cos(heading));
+                for (var k = 0; k < MaxArrows; k++)
+                {
+                    var back = FirstBack + k * Spacing;
+                    if (back > length - PassedMargin) break;
+                    arrows.Add(owner.SpawnArrow(end - forward * back, heading));
+                }
+                return;
+            }
+            for (var k = 0; k < arrows.Count; k++)
+            {
+                if (arrows[k] is not { } arrow || FirstBack + k * Spacing <= length - PassedMargin) continue;
+                arrow.Despawn();
+                arrows[k] = null;
+            }
+        }
+
+        public void Clear()
+        {
+            foreach (var arrow in arrows) arrow?.Despawn();
+            arrows.Clear();
+            laid = false;
+        }
     }
 
     // A hue cycling every `period` seconds, scaled by `brightness`. The tint multiplies the omen's
