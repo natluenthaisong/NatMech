@@ -32,7 +32,8 @@ Changes from AnoMech:
 - Dancing Mad **Playground: Merry-go-round** (Solo): P1's Tele-portent arrows stand in a ring round
   Chaos, each launching you onto the next so you can ride arrow to arrow out of reach of Exdeath, who walks you down (faster over time) once you step off, and Chaos beams
   the spot you stood on a moment ago. Ride a full lap and Exdeath gets Confused and Thunder IIIs
-  Chaos, who Damning Edicts him back after the second hit, just for the meme. Pick the Conga train strat and your party follows you nose to tail. It runs until you drop and reports how long you lasted
+  Chaos, who Damning Edicts him back after the second hit, just for the meme. Pick the Conga train strat and your party follows you nose to tail. From 15s Omega-M walks in and
+  stands between you and Chaos, shield up, blocking any beam that reaches him first. It runs until you drop and reports how long you lasted
   against your best.
 - **Pause**: a Pause/Resume button next to Stop, or `/nat pause` (bind it to a macro for a hotkey).
   Outside multiplayer only.

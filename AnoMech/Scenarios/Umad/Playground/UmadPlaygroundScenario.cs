@@ -15,7 +15,9 @@ namespace AnoMech.Scenarios.Umad.Playground;
 // to arrow, out of Exdeath's reach while you ride. Exdeath walks you down, faster as time goes on;
 // Chaos beams the spot you stood on a moment ago. Ride a whole lap and Exdeath gets Confused and
 // Thunder IIIs Chaos instead, and after the second hit Chaos Damning Edicts him back, just for the
-// meme. It runs until you drop, then reports how long you lasted against your best.
+// meme. Then Omega-M walks in from The Omega Protocol and plants himself between you and Chaos, shield
+// up, eating any beam that reaches him first. It runs until you drop, then reports how long you
+// lasted against your best.
 public sealed class UmadPlaygroundScenario : IScenario
 {
     public string Name => "Playground: Merry-go-round";
@@ -47,6 +49,15 @@ public sealed class UmadPlaygroundScenario : IScenario
     // Damning Edict's 5s bar plus its lock: Chaos leaves you alone till it's out.
     private const float FightBackSeconds = 6.2f;
 
+    private const float OmegaArrives = 15f;
+    private static readonly Vector3 OmegaEntrance = new(-19f, 0f, 0f);
+    // How far in front of you, toward Chaos, he stands.
+    private const float GuardDistance = 2.5f;
+    private const float OmegaSpeed = 9f;
+    private const float GuardTolerance = 0.5f;
+    // TOP's Omega-M clone with only the shield out (P2 Party Synergy's Shield combo).
+    private const byte OmegaShieldOnly = 0;
+
     private const float ChaosStart = 5f;
     private const float BeamInterval = 1.5f;
     // How far behind you the beam aims: where you stood this long ago.
@@ -60,6 +71,7 @@ public sealed class UmadPlaygroundScenario : IScenario
     private SimEnemy? chaos;
     private SimEnemy? exdeath;
     private SimEnemy? thunderHelper;
+    private SimEnemy? omega;
     private int lapLaunches;
     private float confusedFor;
     private int thunderHits;
@@ -74,6 +86,9 @@ public sealed class UmadPlaygroundScenario : IScenario
     internal int Catches { get; private set; }
     internal int ConfusedExdeaths { get; private set; }
     internal int FightBacks { get; private set; }
+    internal int ShieldBlocks { get; private set; }
+    // Beams that reached you, killing you or, in god mode, would have.
+    internal int BeamHits { get; private set; }
     private int beamsDodged;
     private bool over;
 
@@ -89,6 +104,9 @@ public sealed class UmadPlaygroundScenario : IScenario
         Catches = 0;
         ConfusedExdeaths = 0;
         FightBacks = 0;
+        ShieldBlocks = 0;
+        BeamHits = 0;
+        omega = null;
         lapLaunches = 0;
         confusedFor = 0f;
         thunderHits = 0;
@@ -103,6 +121,9 @@ public sealed class UmadPlaygroundScenario : IScenario
         world.Events.Add(0f, () => thunderHelper = world.SpawnEnemy(new EnemySpawnConfig(BNpcBaseId: BNpcBaseId.KefkaHelper, NameId: BNpcNameId.Exdeath, Level: 1,
             Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.InvisibleHelper, Placement: new Placement(Vector3.Zero, 0f))));
         world.Events.Add(ArrowsAt, SpawnArrows);
+        world.Events.Add(OmegaArrives, () => omega = world.SpawnEnemy(new EnemySpawnConfig(
+            InitialModeAttributeFlags: OmegaShieldOnly, BNpcBaseId: Top.TopConstants.BNpcBaseId.OmegaMClone, NameId: Top.TopConstants.BNpcNameId.OmegaM,
+            Level: 90, Targetable: false, EnemyList: EnemyListMode.Never, Visibility: SpawnVisibility.Visible, Placement: new Placement(OmegaEntrance, MathF.PI / 2f))));
         world.Events.Add(ChaosStart, FireBeam);
         if (selectedAi is { } strat) ((IScenarioAi<SimParty>)AiStrats[strat]).Run(world.Party, world);
     }
@@ -120,6 +141,23 @@ public sealed class UmadPlaygroundScenario : IScenario
         if (!Riding(player)) lapLaunches = 0;
         TickArrows(player, delta);
         TickExdeath(player, delta, elapsed);
+        TickOmega(player);
+    }
+
+    private void TickOmega(SimCharacter player)
+    {
+        if (omega is null || chaos is null) return;
+        var guard = GuardSpot(player);
+        if (Vector2.Distance(Flat(omega.Position), Flat(guard)) > GuardTolerance) omega.MoveTo(guard, OmegaSpeed);
+        var toChaos = chaos.Position - omega.Position;
+        if (omega.MoveDestination is null) omega.SetPosition(new Placement(omega.Position, MathF.Atan2(toChaos.X, toChaos.Z)));
+    }
+
+    private Vector3 GuardSpot(SimCharacter player)
+    {
+        var toChaos = chaos!.Position - player.Position;
+        var length = new Vector2(toChaos.X, toChaos.Z).Length();
+        return length < GuardDistance * 2f ? player.Position : player.Position + toChaos / length * GuardDistance;
     }
 
     private void SpawnArrows()
@@ -272,10 +310,20 @@ public sealed class UmadPlaygroundScenario : IScenario
     private void HitWithBeam(Placement source)
     {
         if (over || world.Party.Player is not { } player || !player.IsAlive()) return;
-        if (new AoeQuery(ActionId.WaveCannon, source).SignedDistance(player.Position) is < 0f)
-            player.Die(ActionId.WaveCannon, "Chaos's beam caught up with you");
-        else
+        var beam = new AoeQuery(ActionId.WaveCannon, source);
+        if (beam.SignedDistance(player.Position) is not < 0f)
+        {
             beamsDodged++;
+            return;
+        }
+        if (omega is not null && beam.SignedDistance(omega.Position) is < 0f
+            && Vector3.Distance(source.Position, omega.Position) < Vector3.Distance(source.Position, player.Position))
+        {
+            ShieldBlocks++;
+            return;
+        }
+        BeamHits++;
+        player.Die(ActionId.WaveCannon, "Chaos's beam caught up with you");
     }
 
     private void RecordTrail(SimCharacter player, float elapsed)
@@ -298,7 +346,7 @@ public sealed class UmadPlaygroundScenario : IScenario
             save.BestPlaygroundSeconds = elapsed;
             save.Save();
         }
-        world.Announce($"Merry-go-round: lasted {elapsed:F1}s, {launches} launches, {beamsDodged} beams dodged"
+        world.Announce($"Merry-go-round: lasted {elapsed:F1}s, {launches} launches, {beamsDodged} beams dodged, {ShieldBlocks} blocked by Omega-M"
                        + (record ? " -- new best!" : $" (best {best:F1}s)"));
     }
 

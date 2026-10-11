@@ -169,4 +169,29 @@ public class UmadPlaygroundScenarioTests
         Assert.That(gaps, Is.All.LessThan(3f), "each car right behind the one ahead");
         Assert.That(run.Deaths, Is.Empty, "beams and Exdeath leave the train alone (god mode keeps you up)");
     }
+
+    [Test]
+    public void OmegaMArrivesAndShieldsYouFromTheBeams()
+    {
+        var blocks = 0;
+        var hitsWhileGuarded = -1;
+        var hitsAt20 = 0;
+        ScenarioRun.Execute(typeof(UmadPlaygroundScenario), 0, 1, new ScenarioRunOptions
+        {
+            PlayerRole = Me,
+            StopAt = 40f,
+            WriteArtifactsOnFailure = false,
+            Takeovers = [new Takeover(0.5f, new Vector2(0f, 8f))],
+            Probe = p =>
+            {
+                p.Game.GodMode = true;
+                var playground = (UmadPlaygroundScenario)p.Game.ActiveScenario!;
+                blocks = playground.ShieldBlocks;
+                if (p.Crossed(20f)) hitsAt20 = playground.BeamHits;
+                hitsWhileGuarded = playground.BeamHits - hitsAt20;
+            },
+        });
+        Assert.That(blocks, Is.Positive);
+        Assert.That(hitsWhileGuarded, Is.Zero, "standing still behind Omega-M, every beam is his");
+    }
 }
